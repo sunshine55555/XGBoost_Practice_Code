@@ -5,89 +5,176 @@ XGBoost课程的代码
 
 <pre name="code" class="python"><pre name="code" class="python">#!/usr/bin/env python  
 #-*- coding:utf-8 -*-  
-  
-''''' 
-用逆向最大匹配法分词，不去除停用词 
-'''  
-import codecs  
-import xlrd  
-  
-#读取待分词文本,readlines（）返回句子list  
-def readfile(raw_file_path):  
-    with codecs.open(raw_file_path,"r",encoding="ANSI") as f:  
-        raw_file=f.readlines()  
-        return raw_file  
-#读取分词词典,返回分词词典list  
-def read_dic(dic_path):  
-    excel = xlrd.open_workbook(dic_path)  
-    sheet = excel.sheets()[0]  
-    # 读取第二列的数据  
-    data_list = list(sheet.col_values(1))[1:]  
-    return data_list  
-#逆向最大匹配法分词  
-def cut_words(raw_sentences,word_dic):  
-    word_cut=[]  
-    #最大词长，分词词典中的最大词长,为初始分词的最大词长  
-    max_length=max(len(word) for word in word_dic)  
-    for sentence in raw_sentences:  
-        #strip()函数返回一个没有首尾空白字符(‘\n’、‘\r’、‘\t’、‘’)的sentence，避免分词错误  
-        sentence=sentence.strip()  
-        #单句中的字数  
-        words_length = len(sentence)  
-        #存储切分出的词语  
-        cut_word_list=[]  
-        #判断句子是否切分完毕  
-        while words_length > 0:  
-            max_cut_length = min(words_length, max_length)  
-            for i in range(max_cut_length, 0, -1):  
-                #根据切片性质，截取words_length-i到words_length-1索引的字，不包括words_length,所以不会溢出  
-                new_word = sentence[words_length - i: words_length]  
-                if new_word in word_dic:  
-                    cut_word_list.append(new_word)  
-                    words_length = words_length - i  
-                    break  
-                elif i == 1:  
-                    cut_word_list.append(new_word)  
-                    words_length = words_length - 1  
-        #因为是逆向最大匹配，所以最终需要把结果逆向输出，转换为原始顺序  
-        cut_word_list.reverse()  
-        words="/".join(cut_word_list)  
-        #最终把句子首端的分词符号删除，是避免以后将分词结果转化为列表时会出现空字符串元素  
-        word_cut.append(words.lstrip("/"))  
-    return word_cut  
-#输出分词文本  
-def outfile(out_path,sentences):  
-    #输出模式是“a”即在原始文本上继续追加文本  
-    with codecs.open(out_path,"a","utf8") as f:  
-        for sentence in sentences:  
-            f.write(sentence)  
-    print("well done!")  
-def main():  
-    #读取待分词文本  
-    rawfile_path = r"逆向分词文本.txt"  
-    raw_file=readfile(rawfile_path)  
-    #读取分词词典  
-    wordfile_path = r"words.xlsx"  
-    words_dic = read_dic(wordfile_path)  
-    #逆向最大匹配法分词  
-    content_cut = cut_words(raw_file,words_dic)  
-    #输出文本  
-    outfile_path = r"分词结果.txt"  
-    outfile(outfile_path,content_cut)  
-         
-  
-if __name__=="__main__":  
-    main()</pre><br>  
-<br>  
-<pre></pre>  
-分词结果：  
-<pre></pre>  
-<pre name="code" class="python"><pre></pre><img src="http://img.blog.csdn.net/20170720141313207?watermark/2/text/aHR0cDovL2Jsb2cuY3Nkbi5uZXQvbGFsYWxhd3h0/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70/gravity/SouthEast" alt="">  
-<pre></pre>  
-<pre name="code" class="python">   分析分词结果可以知道，机械分词的效果优劣，一方面与分词匹配算法有关，另外一方面极其依赖分词词典。所以若想得到好的分词效果，处理相关领域的文本时，需要在分词词典中加入特定领域的词汇。  
-<p></p><p>     </p><p>        </p><p>      </p></pre>  
-<pre></pre>  
-<pre></pre>  
-<pre></pre>  
-     
-</pre></pre>  
+2017/09/04
+http://www.cnblogs.com/russellluo/p/3299725.html
+#####字典基础知识
+#text.txt data:i234567890abcdefghijklmno
+data=oepn('text.txt','r').read()
+chars = list(set(data))
+data_size, vocab_size = len(data), len(chars)
+print "data has %d character, %d unique." %(data_size, chars)
+char_to_ix = {ch:i for i, ch in enumerate(chars)}
+ix_to_char = {i:ch for i, ch in enumerate(chars)}
+
+print (char_to_ix)
+print (ix_to_char)
+
+a = {'one':1, 'two':2, 'three':3}
+b = dict(one=1,tow=2,three=3)
+c = dict(zip(['one','two','three'],[1,2,3]))
+d = dict({'three': 3, 'one': 1, 'two':2})
+d = dict({'three': 3, 'one': 1, 'two': 2})
+a==b==c==d
+
+a = {'one':1, 'two':2, 'three':3}
+b = dict(one=1, two=2, three=3)
+c = dict(zip(['one','two','three'],[1,2,3]))
+
+d=dict.formkeys(['a','b','c'])
+d=dict.formkeys(['a','b','c'],6)
+len(d)
+d.clear()
+d = a.copy()
+d
+
+d['three']
+d['four']
+d
+del d['one']
+
+#列表转为字典
+list1=['key1','key2','key3']
+list2=['1','2','3']
+dict(zip(list1,list2))
+#法2：
+new_list = [['key1','value1'],['key2','value2'],['key3','value3']]
+dict(new_list)
+
+
+
+
+
+####英文分词
+import pandas as pd
+import numpy as np
+#先把dict做成字典，方便映射
+dict_url=r"C:\Users\samsung\Desktop\py2pronhydra.map"
+py22 = pd.read_table(dict_url,encoding='utf-8',header=None)
+py22.head()
+py_dict=dict(zip(py22[1],py22[0]))
+
+
+#处理文本
+txt_url=r"C:\Users\samsung\Desktop\hehe.txt"
+hehe = pd.read_table(txt_url,encoding='utf-8',header=None)
+
+def tran2(x):
+    a=""
+    length=int(len((x).split())/3)
+    try:
+        for i in range(length):
+            a+=(py_dict[" ".join(x.split()[i*3:(i+1)*3])])
+    except KeyError:
+        return np.NaN
+    return a.lower()
+
+
+#转化为拼音
+hehe['pinyin'] = hehe[1].apply(tran2)
+#没有被转化的提取出来，转化为文本
+phrase_without = hehe[hehe['pinyin'].isnull()]
+del phrase_without['pinyin']
+phrase_without.to_csv('phrase_without.txt',encoding='utf-8',header=None,index=None,sep='\t')
+#组合成需要的组合，没有被提取出来的将为null
+hehe['combine']=hehe[0]+'\t'+(hehe['pinyin'])
+#删除不需要的列
+del hehe[1]
+del hehe['pinyin']
+del hehe[0]
+hehe.to_csv('hehe.txt',encoding='utf-8',header=None,index=None)
+
+#编码检测包：自认为没啥鸟用，，， 
+import chardet
+f = open('file','r')
+fencoding=chardet.detect(f.read())
+print fencoding
+
+#####sklearn的一些基本方法
+
+alpha_can = np.logspace(-3,2,10)
+lasso_model =GridSearchCV(model, param_grdi={'alpha':alpha_can}, cv=5)
+
+
+
+import multiprocessing
+
+for i in range(5):
+	p=multiprocessing.Process(func,args=(i,))
+	jobs.append(p)
+	p.start()
+	
+
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import wordsegment
+from wordsegment import clean
+from wordsegment import segment
+import pandas as pd
+import numpy as np
+import re
+import copy
+import time
+
+text_url = r"/home/asr/wyl/corpus/dictMdl/test.en"
+text = pd.read_table(text_url,encoding='utf-8',header=None)
+text3 = text.iloc[:100]
+pattern=re.compile('[\[\]\'\,]')
+
+def eng_transform(text4):
+    i=0
+    a=text4.split()
+    b= []
+    num=[]
+    num2=[]
+    while i<len(a):
+        try:
+            tmp=[]
+            while bool(re.match(r'.*[a-zA-Z].*',a[i]))==False:
+                    i+=1
+            num2.append(i)
+            while bool(re.match(r'.*[a-zA-Z].*',a[i])) :
+                tmp.append(a[i])
+                i+=1
+            num.append(i)
+        except:
+            pass    
+        m= (segment(str(tmp)))
+        b.append(m)
+    if (len(num2)>len(num)):
+        a[num2[len(num2)-1]:]=b[len(num2)-1]
+        for i in range(len(num),0,-1):
+            a[num2[i-1]:num[i-1]]=b[i-1]
+    elif (len(num2)<len(num)):
+        a[num[len(num)-1]:]=b[len(num)-1]
+        for i in range(len(num2),0,-1):
+            a[num[i-1]:num2[i-1]]=b[i-1]
+    elif (len(num2)==len(num)):
+        for i in range(len(num2),0,-1):
+            if num[i-1]<num2[i-1]:
+                a[num[i-1]:num2[i-1]]=b[i-1]
+            else:
+                a[num2[i-1]:num[i-1]]=b[i-1]
+
+    return re.sub(pattern,"",str(a))
+
+start = time.clock()
+text3 = text3[0].apply(lambda x:eng_transform(x))
+end = time.clock()
+print (str(end-start))
+text3.to_csv(r'/home/asr/yhd/test.txt',encoding='utf-8',header=None,index=None)
+
+
+
+
+
