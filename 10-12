@@ -26,3 +26,6 @@ df.columns = df.columns.map('_'.join)
 df['date_diff'] = df['date_max']-df['date_min']
 df[df['date_diff']>pd.Timedelta(0)]
 df
+
+
+http://zhfuzh.blog.163.com/blog/static/14553938720128110508698/
