@@ -1,4 +1,7 @@
+import pandas as pd
+import numpy as np
 
+# 统计每个值在每个城市出现次数的比例
 df = pd.DataFrame({'city':['hz','hz','jh','jh','jh', 'jh'],
                   "col1":[1, 7, 3, 4, 5, 5]})
 grouped = df.groupby('city')
@@ -10,7 +13,7 @@ df_result = df_city.join(df_sum)
 df_result['pct'] = df_result['col1_count'] / df_result['col1_total']
 df_result
 
-
+# col1相同的情况下，col2相减
 df = pd.DataFrame({'remote_addr':['1.119.145.6',
                                  '1.119.184.250', '1.119.184.250',
                                  '1.202.52.99', '1.202.52.99'],
