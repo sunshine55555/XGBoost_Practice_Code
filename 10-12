@@ -1,0 +1,25 @@
+
+df = pd.DataFrame({'city':['hz','hz','jh','jh','jh', 'jh'],
+                  "col1":[1, 7, 3, 4, 5, 5]})
+grouped = df.groupby('city')
+df_city = grouped.count()
+df_city.columns = ['col1_total']
+df_sum = grouped['col1'].value_counts()
+df_sum.name = 'col1_count'
+df_result = df_city.join(df_sum)
+df_result['pct'] = df_result['col1_count'] / df_result['col1_total']
+df_result
+
+
+df = pd.DataFrame({'remote_addr':['1.119.145.6',
+                                 '1.119.184.250', '1.119.184.250',
+                                 '1.202.52.99', '1.202.52.99'],
+                  'date':['2017-09-06',
+                         '2017-09-06','2017-09-08',
+                         '2017-09-06','2017-09-07']})
+df['date']=pd.to_datetime(df.date)
+df =df.groupby('remote_addr').agg({'date':[min, max]})
+df.columns = df.columns.map('_'.join)
+df['date_diff'] = df['date_max']-df['date_min']
+df[df['date_diff']>pd.Timedelta(0)]
+df
