@@ -133,7 +133,31 @@ Q12
 不能，大都市和乡镇地区的差别还是很大的，所需要的特征也有很大差别，需要根据具体情况调整  
 不合理，需要更多特征，比如人口数，人口种类，犯罪情况，学校分布，交通便利性等等  
 
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import Gr
+df = pd.read_csv('bj_housing.csv')
+print df.shape
+y=df['Value']
+x=df.drop('Value',axis=1)
+X_train, X_test, y_train, y_test = train_test_split(x,y,train_size=0.8, random_state=0)
+print X_train.shape
+print X_test.shape
 
+reg = fit_model(X_train,y_train)
+print reg
+print performance_metric(y_test,reg.predict(X_test))
+vs.ModelLearning(X_train, y_train)
+vs.ModelComplexity(X_train, y_train)
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import GridSearchCV
+randomf = RandomForestClassifier(random_state=0,min_samples_split=5)
+parameters = {'max_depth':range(1,10),'n_estimators':range(5,30,5)}
+clf = GridSearchCV(randomf,param_grid=parameters,cv=10)
+
+optimal_reg2=clf.fit(X_train,y_train)
+print performance_metric(y_test,optimal_reg2.predict(X_test))
+ 
 
 # XGBoost_Practice_Code
 XGBoost课程的代码
