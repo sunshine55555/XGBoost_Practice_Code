@@ -1,4 +1,6 @@
 
+
+
 # TODO：总的记录数
 n_records = data.shape[0]
 
@@ -53,11 +55,93 @@ print encoded
 
 
 
-# XGBoost_Practice_Code
-XGBoost课程的代码
-关于文件提取的代码：
 
 
+
+
+# TODO：从sklearn中导入两个评价指标 - fbeta_score和accuracy_score
+from sklearn.metrics import fbeta_score, accuracy_score
+
+def train_predict(learner, sample_size, X_train, y_train, X_val, y_val): 
+    '''
+    inputs:
+       - learner: the learning algorithm to be trained and predicted on
+       - sample_size: the size of samples (number) to be drawn from training set
+       - X_train: features training set
+       - y_train: income training set
+       - X_val: features validation set
+       - y_val: income validation set
+    '''
+    
+    results = {}
+    
+    # TODO：使用sample_size大小的训练数据来拟合学习器
+    # TODO: Fit the learner to the training data using slicing with 'sample_size'
+    start = time() # 获得程序开始时间
+    learner = learner.fit(X_train, y_train)
+    end = time() # 获得程序结束时间
+    
+    # TODO：计算训练时间
+    results['train_time'] = start - end
+    
+    # TODO: 得到在验证集上的预测值
+    #       然后得到对前300个训练数据的预测结果
+    start = time() # 获得程序开始时间
+    predictions_val = learner.predict(X_val)
+    predictions_train = learner.predict(X_train)
+    end = time() # 获得程序结束时间
+    
+    # TODO：计算预测用时
+    results['pred_time'] = start - end
+            
+    # TODO：计算在最前面的300个训练数据的准确率
+    results['acc_train'] = accuracy_score(y_train[:300], predictions_train[:300])
+        
+    # TODO：计算在验证上的准确率
+    results['acc_val'] = accuracy_score(y_val, predictions_val)
+    
+    # TODO：计算在最前面300个训练数据上的F-score
+    results['f_train'] = fbeta_score(y_train[:300], predictions_train[:300])
+        
+    # TODO：计算验证集上的F-score
+    results['f_val'] = fbeta_score(y_val, predictions_val)
+       
+    # 成功
+    print "{} trained on {} samples.".format(learner.__class__.__name__, sample_size)
+        
+    # 返回结果
+    return results
+    
+    
+# TODO：从sklearn中导入三个监督学习模型
+from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegressionCV
+from sklearn.ensemble import GradientBoostingClassifier
+# TODO：初始化三个模型
+clf_A = SVC()
+clf_B = LogisticRegressionCV()
+clf_C = GradientBoostingClassifier()
+
+# TODO：计算1%， 10%， 100%的训练数据分别对应多少点
+samples_1 = int(X_train.shape[0]*0.01)
+samples_10 = int(X_train.shape[0]*.1)
+samples_100 = X_train.shape[0]
+
+# 收集学习器的结果
+results = {}
+for clf in [clf_A, clf_B, clf_C]:
+    clf_name = clf.__class__.__name__
+    results[clf_name] = {}
+    for i, samples in enumerate([samples_1, samples_10, samples_100]):
+        results[clf_name][i] = train_predict(clf, samples, X_train, y_train, X_val, y_val)
+
+# 对选择的三个模型得到的评价结果进行可视化
+vs.evaluate(results, accuracy, fscore)
+
+
+
+    
+    
 <pre name="code" class="python"><pre name="code" class="python">#!/usr/bin/env python  
 #-*- coding:utf-8 -*-  
 2017/09/04
