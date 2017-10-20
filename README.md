@@ -1,163 +1,57 @@
-第二步：
 
-#目标：计算价值的最小值
-minimum_price = np.min(prices.astype('float'))
+# TODO：总的记录数
+n_records = data.shape[0]
 
-#目标：计算价值的最大值
-maximum_price = np.max(prices.astype('float'))
+# TODO：被调查者的收入大于$50,000的人数
+n_greater_50k = data['income'].value_counts()[1]
 
-#目标：计算价值的平均值
-mean_price = np.mean(prices.astype('float'))
+# TODO：被调查者的收入最多为$50,000的人数
+n_at_most_50k = data['income'].value_counts()[0]
 
-#目标：计算价值的中值
-median_price = np.median(prices.astype('float'))
+# TODO：被调查者收入大于$50,000所占的比例
+greater_percent = n_greater_50k/float(n_records)
 
-#目标：计算价值的标准差
-std_price = np.std(prices.astype('float'))
-
-
-from sklearn.model_selection import train_test_split
-X_train, X_test, y_train, y_test = train_test_split(features, prices, train_size=0.8, random_state=1)
+# 打印结果
+print "Total number of records: {}".format(n_records)
+print "Individuals making more than $50,000: {}".format(n_greater_50k)
+print "Individuals making at most $50,000: {}".format(n_at_most_50k)
+print "Percentage of individuals making more than $50,000: {:.2f}%".format(greater_percent)
 
 
-
-RM与MEDV成正比，RM越大，MEDV越大  
-LSTAT和PTRATIO分别与MEDV成反比，二者越小，MEDV越大
-
-
-1. test set用来检测模型的好坏， 并通过GridCV来确定超参数来构建更好的模型，便于用test set测试模型好坏
-2. 用模型训练过的数据进行模型测试，无法准确的确定模型的预测能力或者说得出的模型的预测能力无法让人信服
-3. 没有test set，不能准确知道训练出来的模型的好坏
+获得特征和标签
+import matplotlib.pylab as plt
+plt.scatter(pd.DataFrame(features_raw['capital-loss'].value_counts()).index,pd.DataFrame(features_raw['capital-loss'].value_counts())['capital-loss'])
+plt.show
+print features_raw['capital-loss'].value_counts().head()
+print features_raw['capital-gain'].value_counts().head()
 
 
-trainin & testing data  
-在一个独立的数据集上来测试模型的好坏
-作为一个过拟合的检测方式
+练习：数据预处理
+# TODO：使用pandas.get_dummies()对'features_raw'数据进行独热编码
+features = pd.get_dummies(features_raw)
+# TODO：将'income_raw'编码成数字值
+def cat_to_num(x):
+    data = np.array(x)
+    categories = np.unique(data)
+    features=[]
+    for cat in categories:
+        features.append((data==cat).astype('int'))
+    return pd.DataFrame(features,index=categories).T
 
-第三步：
-# TODO 3
+income2 = cat_to_num(income_raw)
+income = pd.get_dummies(income_raw)
 
-# 提示： 导入r2_score
-from sklearn.metrics import r2_score
-def performance_metric(y_true, y_predict):
-    """计算并返回预测值相比于预测值的分数"""
-    
-    score = r2_score(y_true,y_predict)
+# 打印经过独热编码之后的特征数量
+encoded = list(features.columns)
+print "{} total features after one-hot encoding.".format(len(encoded))
 
-    return score
-    
-    
-# TODO 3 可选
-
-# 不允许导入任何计算决定系数的库
-
-def performance_metric2(y_true, y_predict):
-    """计算并返回预测值相比于预测值的分数"""
-    sum = 0
-    y_predict_sum = 0
-    for i in y_predict:
-        y_predict_sum +=i
-    y_predict_avg = y_predict_sum/len(y_predict)    
-    print y_predict_sum, np.sum(y_predict)
-    print y_predict_avg, np.mean(y_predict)
-    for i in range(len(y_true)):
-        sum += ((y_true[i]-y_predict[i])**2)/((y_true[i] - y_predict_avg)**2)
-    print sum
-    score = 1-sum
-
-    return score
-    
- R2的值0.923,我通过函数标准化两列数据以后测得的R2为0.948.认为已经很好的描述了目标变量的变化
- 
- 
- 第四步：
- 选择第二个图，max_depth=3,随着训练数据增加，测试集R2缓慢的降低，训练集大于50后R2缓慢的增加  
-更多的训练数据，测试集的表会提高会显著提高，缓慢增加逼近测试集的R2。
-    
- 
-Q6：
-为3时能够最好的未见过的数据进行预测  
-在max_depth=4时，测试集上的r2对应的值最大，训练集与测试集之间的误差最小，模型的泛化能力最强。
-
-第五步：
-Q7：
-通过参数网格的形式提供给模型进行全面的参数选择，可以通过GridSearchCV对训练集进行训练选择出模型效果最好的超参数
-Q8:
-1. 将训练数据分成K份，然后将每一份拿出来做测试集，其他作为训练集，总共进行K次训练，然后去平均值，这样的得到的结果更精确
-2. 
-3. cv_results_能够告诉我们所有的参数验证的各个组合对应的得分  
-4. 得到的值不够
-
-# TODO 4
-
-#提示: 导入 'KFold' 'DecisionTreeRegressor' 'make_scorer' 'GridSearchCV' 
-from sklearn.model_selection import KFold
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.metrics import make_scorer
-from sklearn.model_selection import GridSearchCV
-
-def fit_model(X, y):
-    """ 基于输入数据 [X,y]，利于网格搜索找到最优的决策树模型"""
-    
-    cross_validator = KFold(n_splits=10)
-    
-    regressor = DecisionTreeRegressor(random_state=0)
-
-    params = {'max_depth':range(1,11)}
-
-    scoring_fnc = make_scorer(performance_metric)
-
-    grid = GridSearchCV(regressor,param_grid=params,scoring=scoring_fnc,cv=cross_validator)
-
-    # 基于输入数据 [X,y]，进行网格搜索
-    grid = grid.fit(X, y)
-
-    # 返回网格搜索后的最优模型
-    return grid.best_estimator_
-    
-Q9:
-max_depth=4。  
-相同，当depth=4
-
-Q10：
-我会建议他们的售价和上面的预测结果相一致  
-从特征来说，第三个客户的房间最多，社区贫困和师生比最低，价格最高，相对客服2来说，正好相反，所以价格最低。所以价格合理  
-
-Q11:
-R^2为0.78,结果不好，可能需要其他的模型进行尝试
+# 移除下面一行的注释以观察编码的特征名字
+print encoded
 
 
-Q12
-可以考虑  
-不足够，特征太少  
-不能，大都市和乡镇地区的差别还是很大的，所需要的特征也有很大差别，需要根据具体情况调整  
-不合理，需要更多特征，比如人口数，人口种类，犯罪情况，学校分布，交通便利性等等  
 
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import Gr
-df = pd.read_csv('bj_housing.csv')
-print df.shape
-y=df['Value']
-x=df.drop('Value',axis=1)
-X_train, X_test, y_train, y_test = train_test_split(x,y,train_size=0.8, random_state=0)
-print X_train.shape
-print X_test.shape
 
-reg = fit_model(X_train,y_train)
-print reg
-print performance_metric(y_test,reg.predict(X_test))
-vs.ModelLearning(X_train, y_train)
-vs.ModelComplexity(X_train, y_train)
 
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import GridSearchCV
-randomf = RandomForestClassifier(random_state=0,min_samples_split=5)
-parameters = {'max_depth':range(1,10),'n_estimators':range(5,30,5)}
-clf = GridSearchCV(randomf,param_grid=parameters,cv=10)
-
-optimal_reg2=clf.fit(X_train,y_train)
-print performance_metric(y_test,optimal_reg2.predict(X_test))
- 
 
 # XGBoost_Practice_Code
 XGBoost课程的代码
