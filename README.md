@@ -1,3 +1,56 @@
+# TODO：从sklearn中导入三个监督学习模型
+from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegressionCV
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.model_selection import GridSearchCV
+from sklearn.ensemble import RandomForestClassifier
+# TODO：初始化三个模型
+clf_A = SVC(kernel='rbf')
+# clf_A = GradientBoostingClassifier()
+clf_B = LogisticRegressionCV()
+# clf_C = GradientBoostingClassifier()
+# clf_C = GridSearchCV(SVC(kernel='rbf', decision_function_shape='ovr'), param_grid={'C': alpha, 'gamma': alpha})
+clf_C = RandomForestClassifier()
+
+# TODO：计算1%， 10%， 100%的训练数据分别对应多少点
+samples_1 = int(X_train.shape[0]*0.01)
+samples_10 = int(X_train.shape[0]*.1)
+samples_100 = X_train.shape[0]
+
+# 收集学习器的结果
+results = {}
+for clf in [clf_A, clf_B, clf_C]:
+    clf_name = clf.__class__.__name__
+    results[clf_name] = {}
+    for i, samples in enumerate([samples_1, samples_10, samples_100]):
+        results[clf_name][i] = train_predict(clf, samples, X_train, y_train, X_val, y_val)
+vs.evaluate(results, 0.6,0.3)
+
+param_grid = [
+  {'C': [1, 10, 100, 1000], 'kernel': ['linear']},
+  {'C': [1, 10, 100, 1000], 'gamma': [0.001, 0.0001], 'kernel': ['rbf']},
+ ]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     
 <pre name="code" class="python"><pre name="code" class="python">#!/usr/bin/env python  
