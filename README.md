@@ -1,3 +1,159 @@
+https://github.com/zhpmatrix/awesome-xgb
+http://xgboost.readthedocs.io/en/latest/parameter.html#learning-task-parameters
+[Xgboost参数说明界面](http://xgboost.readthedocs.io/en/latest/parameter.html)
+
+1.general parameters  
+booster 一般是default ，有gtree,gblinear,或者 dart   
+silent 一般是default
+nthread  
+num_pbuffer  
+
+2.Parameters for tree    
+**eta (学习率）需要调** range[0,1]  
+gamma  对树的叶子节点损失的值，越大，越保守。控制过拟合range:>=0  
+max_depth 越大模型越复杂  
+subsample   
+colsampe_bytree  
+colsampe_bylevel  
+lambda  
+scale_pos_weight 调整权重（正负样本）  
+
+3.learning task parameters  
+objective：损失函数/目标函数  
+     default=reg:linear  
+   reg:linear  
+   reg:logistic  
+   binary:logistic  
+   binary:logitraw  
+   multi:softmax  
+   multi:softprob  
+   rank:pairwise  
+   reg:gamma  
+
+-----
+base_score  
+eval_metric:评估标准 rmse, mae, logloss, error, 
+
+## Control Overfitting
+
+1控制模型复杂度： max_depth, min_child_weight % gamma  
+2增加随机性去使得模型更健壮 subsample, colsample_bytree 或者减少eta同时要增加num_round
+
+## handle unbalanced Dataset
+
+如果你只关心 positive & negative weights, via scale_pos_weight (**用AUC去评价**）  
+关心predict the right probability,you cannot rebalance the dataset, set parameter max_delta_step to a finite number(say 1) will help convergence  
+
+libsvm用来存储稀疏的矩阵特征
+
+import numpy as np
+import pandas as pd
+import cPickle
+import xgboost as xgb
+
+dtrain = xgb.DMatrix(agaricus.txt.train)
+dtest = xgb.DMatrix(agaricus.txt.test)
+
+
+## 1.parameter setting
+
+param = {'max_depth':2, 'eta':1, 'silent':1, 'objective':'binary'}
+watch_list = [(dtest,'eval'),(dtrain, 'train')]
+num_round =5 
+# model = xgb.train(params=param, dtrain = dtrain, num_boost_round = num_round,watch_list)
+model  = xgb.train(param, dtrain, num_round, watch_list)
+model.predict(dtest) #返回的是个array对应的每个值为正样本的概率
+labels = dtest.get_label()#将上面的概率转化为label  
+
+#为啥我觉得是count呢？sum不就是sum（index）？？
+error_num = sum([index for index in range(len(pred) if int(pred[index]>0.5)!=labels[index])])
+
+model.dump_model('1.model')
+
+## 2.交叉验证
+
+import pandas as pd
+import numpy as np
+dtrain = xgb.DMatrix('agaricus.txt.train')
+param = {'max_depth':2, 'eta':1, 'silent':1, 'objective':'binary:logistic'}
+num_round = 3 #用三棵树来做，越多越好，但是容易过拟合
+xgb.cv(param, dtrain, num_round, nfold=5, metrics = {'error'},seed=1)
+
+
+## 3 调整样本权重
+
+def preproc(dtrain, dtest, param):
+    labels = dtrain.get_label()
+    ratio = float(np.sum(labels == 0))/np.sum(labels==1)
+    param['scale_pos_ratio'] = ratio
+    return (dtrain, dtest, param)
+
+xgb.cv(params, dtrain, num_round, nfold=5, metrics={'auc'},seed=3,fpreproc=preproc) #预处理的fpreproc=preproc
+
+## 4.自定义损失函数与交叉验证
+
+### 自定义目标函数（log似然损失），交叉验证
+# 提供一阶导数 和 二阶导数
+
+def logregobj(pred, dtrain):
+    labels = dtrain.get_label()
+    pred = 1.0/(1+np.exp(-pred))
+    grad = pred - labels #梯度
+    hess = pred *(1-pred)
+    return grad, hess
+
+def evalerror(pred, dtrain):
+    labels = dtrain.get_label()
+    return 'error rate:', float(sum(labels!=(pred>0.0)))/len(labels)#pred是linear出来的结果，再放到sigmoid里面
+
+param = {'max_depth':2, 'eta':1, 'silent':1}
+num_round = 3 
+# model = xgb.train(param, dtrain, num_round, watch_list, logregobj, evalerror)
+xgb.cv(param,dtrain, num_round, nfold =5, seed =3 ,obj=logregobj, feval=evalerror)
+
+## 高级用法
+用前N颗树做预测
+
+pred2 = model.predict(dtest, ntree_limit = 1)
+print evalerror(pred2, dtest)
+
+## 画出特征重要度
+
+%matplotlib inline
+from xgboost import plot_importance
+import matplotlib.pyplot as plt
+help(plot_importance)
+plot_importance(model, max_num_features =10)
+plt.show()
+
+
+## 如何和sklearn/pandas结合
+
+import cPickle
+# import xgboost as xgb
+import numpy as np
+from sklearn.model_selection import KFold, train_test_split, GridSearchCV
+from sklearn.metrics import confusion_matrix, mean_squared_error
+from sklearn.datasets import load_iris,load_digits, load_boston
+
+#用xgboost建模，用sklearn做评估
+# 二分类问题，用混淆矩阵
+
+digits = load_digits()
+y=digits['target']
+X= digits['data']
+print X.shape
+print y.shape
+
+kf = KFold(n_split=2, shuffle=True, random_state=0)
+for train_index, test_index in kf.split(X):
+    
+    
+    
+    
+    
+
+
 # TODO：从sklearn中导入三个监督学习模型
 from sklearn.svm import SVC
 from sklearn.linear_model import LogisticRegressionCV
