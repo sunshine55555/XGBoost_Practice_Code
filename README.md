@@ -1,5 +1,6 @@
 https://github.com/zhpmatrix/awesome-xgb
 http://xgboost.readthedocs.io/en/latest/parameter.html#learning-task-parameters
+http://blog.csdn.net/han_xiaoyang/article/details/52663170
 [Xgboost参数说明界面](http://xgboost.readthedocs.io/en/latest/parameter.html)
 
 1.general parameters  
@@ -83,7 +84,7 @@ xgb.cv(param, dtrain, num_round, nfold=5, metrics = {'error'},seed=1)
 ## 3 调整样本权重
 
 def preproc(dtrain, dtest, param):
-    labels = dtrain.get_label()
+    labels = dtrain.get_label()	
     ratio = float(np.sum(labels == 0))/np.sum(labels==1)
     param['scale_pos_ratio'] = ratio
     return (dtrain, dtest, param)
