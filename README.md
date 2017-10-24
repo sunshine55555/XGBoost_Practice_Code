@@ -1,6 +1,10 @@
 https://github.com/zhpmatrix/awesome-xgb
-http://xgboost.readthedocs.io/en/latest/parameter.html#learning-task-parameters
-http://blog.csdn.net/han_xiaoyang/article/details/52663170
+http://xgboost.readthedocs.io/en/latest/parameter.html#learning-task-parameters  
+http://blog.csdn.net/han_xiaoyang/article/details/52663170  
+http://blog.csdn.net/suranxu007/article/details/49910323  
+https://www.zhihu.com/search?type=content&q=GBDT  
+http://www.jianshu.com/p/005a4e6ac775  
+https://en.wikipedia.org/wiki/Gradient_boosting#Gradient_tree_boosting  
 [Xgboost参数说明界面](http://xgboost.readthedocs.io/en/latest/parameter.html)
 
 1.general parameters  
