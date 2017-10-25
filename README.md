@@ -1,3 +1,8 @@
+boosting是个串行迭代算法，对每个样本不断的进行调整，对样本依赖性较强，可以很好的拟合数据，但是若训练数据有问题（噪音太多），则模型会很差，bias会高
+
+
+
+
 https://github.com/zhpmatrix/awesome-xgb
 http://xgboost.readthedocs.io/en/latest/parameter.html#learning-task-parameters  
 http://blog.csdn.net/han_xiaoyang/article/details/52663170  
