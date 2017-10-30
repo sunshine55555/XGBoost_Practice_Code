@@ -1,5 +1,148 @@
-boosting是个串行迭代算法，对每个样本不断的进行调整，对样本依赖性较强，可以很好的拟合数据，但是若训练数据有问题（噪音太多），则模型会很差，bias会高
 
+P3:
+1.选择样本：
+indices =[23,200,401]
+2.特征相关性
+问题1：
+**回答:** 第一家企业对于所有物品的需求量都很高，部分数据都是分别远远高其他两个店，推测为超市，需求量大而且全。   
+第三家企业的fresh与frozen和第二家企业的milk，grocery和detergents_paper远多于彼此。  我推测第二家店更像是杂货店买一些grocery和生活日用品。第三家店卖fresh 和 frozen，像一个卖生鲜蔬菜的地方。
+
+
+2.1 
+# TODO：为DataFrame创建一个副本，用'drop'函数丢弃一个特征
+new_data = data.drop([u'Detergents_Paper'],axis=1)
+labels = data['Detergents_Paper']
+# TODO：使用给定的特征作为目标，将数据分割成训练集和测试集
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(new_data, labels, test_size=0.25, random_state=0)
+
+# TODO：创建一个DecisionTreeRegressor（决策树回归器）并在训练集上训练它
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.model_selection import GridSearchCV
+regressor = DecisionTreeRegressor(random_state = 0)
+params = {'max_depth':range(2,10), 'min_samples_leaf':range(1,5),'min_samples_split':range(2,5)}
+clf = GridSearchCV(regressor, param_grid=params,cv=10)
+clf.fit(X_train, y_train)
+# TODO：输出在测试集上的预测得分
+from sklearn.metrics import r2_score
+score = r2_score(y_test, clf.predict(X_test))
+print '被选择的参数是%s,得分是%.4f' %(i,score)
+# print clf.best_estimator_
+# print clf.best_params_
+# print clf.best_score_
+
+2.2
+for i in data.columns:
+    # TODO：为DataFrame创建一个副本，用'drop'函数丢弃一个特征
+    new_data = data.drop([i],axis=1)
+    labels = data[i]
+    # TODO：使用给定的特征作为目标，将数据分割成训练集和测试集
+    from sklearn.model_selection import train_test_split
+    X_train, X_test, y_train, y_test = train_test_split(new_data, labels, test_size=0.25, random_state=0)
+
+    # TODO：创建一个DecisionTreeRegressor（决策树回归器）并在训练集上训练它
+    from sklearn.tree import DecisionTreeRegressor
+    from sklearn.model_selection import GridSearchCV
+    regressor = DecisionTreeRegressor(random_state = 0)
+    params = {'max_depth':range(2,10), 'min_samples_leaf':range(1,5),'min_samples_split':range(2,5)}
+    clf = GridSearchCV(regressor, param_grid=params,cv=10)
+    clf.fit(X_train, y_train)
+    # TODO：输出在测试集上的预测得分
+    from sklearn.metrics import r2_score
+    score = r2_score(y_test, clf.predict(X_test))
+    print '被选择的数据是%s,得分是%.4f' %(i,score)
+#     print clf.best_estimator_
+#     print clf.best_params_
+#     print clf.best_score_
+
+问题2：
+**回答:**我选择的是Detergents_Paper,得分是0.7557。从得分上来看，其他五个商品的选择能够较好的表示Detergents_Paper的消费数量，所以这个特征对于区分用户的消费习惯来说是有必要的。  
+
+
+问题3:
+**回答:** 从图中看，detergents_paper与milk,和Grocery都是明显得分正相关关系，milk与grocey也存在着正相关关系。  
+大多数数据点分布在20000之前 ,从对角线的kde图上来看，所有图都不是正态分布而是左偏
+
+特征缩放：
+log_data = np.log(data)
+log_samples = np.log(samples)
+pd.plotting.scatter_matrix(log_data, alpha = 0.3, figsize = (14,8), diagonal = 'kde');
+
+异常值检测：
+# 对于每一个特征，找到值异常高或者是异常低的数据点
+outliers=[]
+outliers2=[]
+for feature in log_data.keys():
+    
+    # TODO：计算给定特征的Q1（数据的25th分位点）
+    Q1 = np.percentile(log_data[feature], 25)
+    
+    # TODO：计算给定特征的Q3（数据的75th分位点）
+    Q3 = np.percentile(log_data[feature], 75)
+    
+    # TODO：使用四分位范围计算异常阶（1.5倍的四分位距）
+    step = (Q3-Q1)*1.5
+    
+    # 显示异常点
+    print "Data points considered outliers for the feature '{}':".format(feature)
+    display(log_data[((log_data[feature] <= Q1 - step) | (log_data[feature] >= Q3 + step))])
+#     display(log_data[~((log_data[feature] >= Q1 - step) & (log_data[feature] <= Q3 + step))])
+    outliers.extend((log_data[((log_data[feature] <= Q1 - step) | (log_data[feature] >= Q3 + step))]).index.values)
+    outliers2.append((log_data[((log_data[feature] <= Q1 - step) | (log_data[feature] >= Q3 + step))]).index.values)
+# 可选：选择你希望移除的数据点的索引
+
+# for feature in log_data.keys():
+
+# 如果选择了的话，移除异常点
+
+good_data = log_data.drop(log_data.index[outliers]).reset_index(drop = True)
+
+问题4：
+outliers2
+pd.DataFrame(outliers)[0].value_counts()
+index_outliers = [154, 66, 75, 128, 65]
+data.iloc[index_outliers]
+**回答:** index为65,128,75,66,154的数据还有两个及以上的特征为异常值  
+我认为应该移除，多于一个特征为异常数据，即使真实存在这样的数据，因为其数据过大或者过小均认为是小概率事情，都应该去掉，防止模型拟合出这些数据，影响模型的性能
+
+
+PCA:
+good_data = log_data.drop(log_data.index[index_outliers]).reset_index(drop = True)
+# TODO：通过在good_data上使用PCA，将其转换成和当前特征数一样多的维度
+from sklearn.decomposition import PCA
+pca = PCA(n_components=6)
+pca.fit(good_data)
+print pca.explained_variance_ratio_
+# TODO：使用上面的PCA拟合将变换施加在log_samples上
+pca_samples = pca.transform(log_samples)
+
+# 生成PCA的结果图
+pca_results = vs.pca_results(good_data, pca)
+
+问题5：
+**回答:** 前两个解释了0.7068的方差，前四个解释了0.9311的方差。
+
+练习：降为
+# TODO：通过在good data上进行PCA，将其转换成两个维度
+pca = PCA(n_components=2).fit(good_data)
+
+# TODO：使用上面训练的PCA将good data进行转换
+reduced_data = pca.transform(good_data)
+
+# TODO：使用上面训练的PCA将log_samples进行转换
+pca_samples = pca.transform(log_samples)
+
+# 为降维后的数据创建一个DataFrame
+reduced_data = pd.DataFrame(reduced_data, columns = ['Dimension 1', 'Dimension 2'])
+
+聚类：
+from sklearn.cluster import KMeans
+from sklearn.metrics import silhouette_score
+for i in range(2,10):
+    clusterer = KMeans(n_clusters=i, random_state=0)
+    clusterer.fit(reduced_data)
+    # print clusterer.labels_
+    print silhouette_score(reduced_data, clusterer.labels_,metric='euclidean')
 
 
 
@@ -158,63 +301,6 @@ print y.shape
 kf = KFold(n_split=2, shuffle=True, random_state=0)
 for train_index, test_index in kf.split(X):
     
-    
-    
-    
-    
-
-
-# TODO：从sklearn中导入三个监督学习模型
-from sklearn.svm import SVC
-from sklearn.linear_model import LogisticRegressionCV
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.model_selection import GridSearchCV
-from sklearn.ensemble import RandomForestClassifier
-# TODO：初始化三个模型
-clf_A = SVC(kernel='rbf')
-# clf_A = GradientBoostingClassifier()
-clf_B = LogisticRegressionCV()
-# clf_C = GradientBoostingClassifier()
-# clf_C = GridSearchCV(SVC(kernel='rbf', decision_function_shape='ovr'), param_grid={'C': alpha, 'gamma': alpha})
-clf_C = RandomForestClassifier()
-
-# TODO：计算1%， 10%， 100%的训练数据分别对应多少点
-samples_1 = int(X_train.shape[0]*0.01)
-samples_10 = int(X_train.shape[0]*.1)
-samples_100 = X_train.shape[0]
-
-# 收集学习器的结果
-results = {}
-for clf in [clf_A, clf_B, clf_C]:
-    clf_name = clf.__class__.__name__
-    results[clf_name] = {}
-    for i, samples in enumerate([samples_1, samples_10, samples_100]):
-        results[clf_name][i] = train_predict(clf, samples, X_train, y_train, X_val, y_val)
-vs.evaluate(results, 0.6,0.3)
-
-param_grid = [
-  {'C': [1, 10, 100, 1000], 'kernel': ['linear']},
-  {'C': [1, 10, 100, 1000], 'gamma': [0.001, 0.0001], 'kernel': ['rbf']},
- ]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
