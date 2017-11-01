@@ -1,148 +1,241 @@
 
-P3:
-1.选择样本：
-indices =[23,200,401]
-2.特征相关性
-问题1：
-**回答:** 第一家企业对于所有物品的需求量都很高，部分数据都是分别远远高其他两个店，推测为超市，需求量大而且全。   
-第三家企业的fresh与frozen和第二家企业的milk，grocery和detergents_paper远多于彼此。  我推测第二家店更像是杂货店买一些grocery和生活日用品。第三家店卖fresh 和 frozen，像一个卖生鲜蔬菜的地方。
+1 feature rescaling
+algorithm affteced by feature rescaling:
+SVM:缩放以后，你的超平面会改变
+kmeans clustering： 缩放以后，center 与点的距离也在改变
+
+penultimate topic 倒数第二个topic
+
+2 feature selection
+curse of dimensionality
 
 
-2.1 
-# TODO：为DataFrame创建一个副本，用'drop'函数丢弃一个特征
-new_data = data.drop([u'Detergents_Paper'],axis=1)
-labels = data['Detergents_Paper']
-# TODO：使用给定的特征作为目标，将数据分割成训练集和测试集
-from sklearn.model_selection import train_test_split
-X_train, X_test, y_train, y_test = train_test_split(new_data, labels, test_size=0.25, random_state=0)
 
-# TODO：创建一个DecisionTreeRegressor（决策树回归器）并在训练集上训练它
-from sklearn.tree import DecisionTreeRegressor
-from sklearn.model_selection import GridSearchCV
-regressor = DecisionTreeRegressor(random_state = 0)
-params = {'max_depth':range(2,10), 'min_samples_leaf':range(1,5),'min_samples_split':range(2,5)}
-clf = GridSearchCV(regressor, param_grid=params,cv=10)
-clf.fit(X_train, y_train)
-# TODO：输出在测试集上的预测得分
-from sklearn.metrics import r2_score
-score = r2_score(y_test, clf.predict(X_test))
-print '被选择的参数是%s,得分是%.4f' %(i,score)
-# print clf.best_estimator_
-# print clf.best_params_
-# print clf.best_score_
+forward search
+backward search
 
-2.2
-for i in data.columns:
-    # TODO：为DataFrame创建一个副本，用'drop'函数丢弃一个特征
-    new_data = data.drop([i],axis=1)
-    labels = data[i]
-    # TODO：使用给定的特征作为目标，将数据分割成训练集和测试集
-    from sklearn.model_selection import train_test_split
-    X_train, X_test, y_train, y_test = train_test_split(new_data, labels, test_size=0.25, random_state=0)
-
-    # TODO：创建一个DecisionTreeRegressor（决策树回归器）并在训练集上训练它
-    from sklearn.tree import DecisionTreeRegressor
-    from sklearn.model_selection import GridSearchCV
-    regressor = DecisionTreeRegressor(random_state = 0)
-    params = {'max_depth':range(2,10), 'min_samples_leaf':range(1,5),'min_samples_split':range(2,5)}
-    clf = GridSearchCV(regressor, param_grid=params,cv=10)
-    clf.fit(X_train, y_train)
-    # TODO：输出在测试集上的预测得分
-    from sklearn.metrics import r2_score
-    score = r2_score(y_test, clf.predict(X_test))
-    print '被选择的数据是%s,得分是%.4f' %(i,score)
-#     print clf.best_estimator_
-#     print clf.best_params_
-#     print clf.best_score_
-
-问题2：
-**回答:**我选择的是Detergents_Paper,得分是0.7557。从得分上来看，其他五个商品的选择能够较好的表示Detergents_Paper的消费数量，所以这个特征对于区分用户的消费习惯来说是有必要的。  
+Markov Decision Process
+States: S 
+Model: T(s, a, s') Pr(s' | s, a)
+Actions: A(s), A 
+Reward: R(s) R(s, a), R(s, a, s')'
+Policy
 
 
-问题3:
-**回答:** 从图中看，detergents_paper与milk,和Grocery都是明显得分正相关关系，milk与grocey也存在着正相关关系。  
-大多数数据点分布在20000之前 ,从对角线的kde图上来看，所有图都不是正态分布而是左偏
-
-特征缩放：
-log_data = np.log(data)
-log_samples = np.log(samples)
-pd.plotting.scatter_matrix(log_data, alpha = 0.3, figsize = (14,8), diagonal = 'kde');
-
-异常值检测：
-# 对于每一个特征，找到值异常高或者是异常低的数据点
-outliers=[]
-outliers2=[]
-for feature in log_data.keys():
-    
-    # TODO：计算给定特征的Q1（数据的25th分位点）
-    Q1 = np.percentile(log_data[feature], 25)
-    
-    # TODO：计算给定特征的Q3（数据的75th分位点）
-    Q3 = np.percentile(log_data[feature], 75)
-    
-    # TODO：使用四分位范围计算异常阶（1.5倍的四分位距）
-    step = (Q3-Q1)*1.5
-    
-    # 显示异常点
-    print "Data points considered outliers for the feature '{}':".format(feature)
-    display(log_data[((log_data[feature] <= Q1 - step) | (log_data[feature] >= Q3 + step))])
-#     display(log_data[~((log_data[feature] >= Q1 - step) & (log_data[feature] <= Q3 + step))])
-    outliers.extend((log_data[((log_data[feature] <= Q1 - step) | (log_data[feature] >= Q3 + step))]).index.values)
-    outliers2.append((log_data[((log_data[feature] <= Q1 - step) | (log_data[feature] >= Q3 + step))]).index.values)
-# 可选：选择你希望移除的数据点的索引
-
-# for feature in log_data.keys():
-
-# 如果选择了的话，移除异常点
-
-good_data = log_data.drop(log_data.index[outliers]).reset_index(drop = True)
-
-问题4：
-outliers2
-pd.DataFrame(outliers)[0].value_counts()
-index_outliers = [154, 66, 75, 128, 65]
-data.iloc[index_outliers]
-**回答:** index为65,128,75,66,154的数据还有两个及以上的特征为异常值  
-我认为应该移除，多于一个特征为异常数据，即使真实存在这样的数据，因为其数据过大或者过小均认为是小概率事情，都应该去掉，防止模型拟合出这些数据，影响模型的性能
 
 
-PCA:
-good_data = log_data.drop(log_data.index[index_outliers]).reset_index(drop = True)
-# TODO：通过在good_data上使用PCA，将其转换成和当前特征数一样多的维度
-from sklearn.decomposition import PCA
-pca = PCA(n_components=6)
-pca.fit(good_data)
-print pca.explained_variance_ratio_
-# TODO：使用上面的PCA拟合将变换施加在log_samples上
-pca_samples = pca.transform(log_samples)
 
-# 生成PCA的结果图
-pca_results = vs.pca_results(good_data, pca)
 
-问题5：
-**回答:** 前两个解释了0.7068的方差，前四个解释了0.9311的方差。
 
-练习：降为
-# TODO：通过在good data上进行PCA，将其转换成两个维度
-pca = PCA(n_components=2).fit(good_data)
+4.1.1
+ls -a
+.test
+所有者 》 所属组 》 其他人
+ls -lh
+-rw-r--r--. 1 root root 7690 3月 3 09:06 test.sh 
+ u  g  o                                  文件的最后一次修改时间
+所有者  所属组 其他人
+r读 w写 x执行(excute)
+x:为最大权限；权限够用就行
+10个字符：第一个表示文件类型
+-:文件； d:目录; l:软链接
+后面九个
 
-# TODO：使用上面训练的PCA将good data进行转换
-reduced_data = pca.transform(good_data)
+ls -d /etc
+ls -ld /etc
+每个文件都有ID，查看文件ID：ls -i
+ls -a -l -h -d -i 
 
-# TODO：使用上面训练的PCA将log_samples进行转换
-pca_samples = pca.transform(log_samples)
+4.1.2
+mkdir test
+mkdir -p 递归创建
+mkdir -p /tmp/Janpa/buduo
+mkdir /tmp/Janpan/longze /tmp/Janpa/cangjing
 
-# 为降维后的数据创建一个DataFrame
-reduced_data = pd.DataFrame(reduced_data, columns = ['Dimension 1', 'Dimension 2'])
+cd 
+cd /tmp/Janpan/cangjing 
+pwd: print working directory
+rmdir: remove empty directories 
+rm /tmp/Janpa/cangjing
+cp -r /tmp/Janpa/cangjing /etc
+cp 可以复制多个文件最后一个是目标目录
+cp -p /root/install.log /tmp  (保存复制的文件的属性)
+ls -l 
 
-聚类：
-from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score
-for i in range(2,10):
-    clusterer = KMeans(n_clusters=i, random_state=0)
-    clusterer.fit(reduced_data)
-    # print clusterer.labels_
-    print silhouette_score(reduced_data, clusterer.labels_,metric='euclidean')
+mv
+mv 
+clear 
+rm 
+rm -r 
+rm -f强制删除 不用回复y是否删除
+rm -rf强制删除一个目录
+
+4.1.3
+touch cat more less head tail
+touch
+touch test.txt 
+touch shenchao girl 创建了两个文件
+touch "program file" 创建了一个文件叫program file。不推荐这样有空格的文件
+
+cat 
+cat test.txt
+cat -n test.txt 加行号
+cat 浏览不长的文件
+tac test.txt倒着显示文件
+
+more :分页显示命令
+more /etc/services 小命令：空格; f；enter; q:退出
+小命令：空格; f；enter; q:退出
+
+less:与more不同是可以向上往回翻页
+less /etc/services ;
+page up往上翻或者上箭头一行行翻
+能够搜索：/
+在搜索后，按n: 表示next也是往下翻搜索的东西
+
+head 看文件的前几行后者后几行
+head -n 7 /services
+head /services 看前10行（默认）
+tail -n 3 /services
+tail /services
+tail -f /var/log/messages 能够实时的看到文件动态的变化
+
+
+4.1.4
+软链接：类似于windows的快捷方式，方便找到文件
+ln -s /etc/issue /tmp/issue.soft
+将issue生成一个软链接issue.soft
+ln /etc/issue /tmp/issue.hard 
+ls -l /tmp/issue.soft：显示文件的指示路径。软链接的权限可以忽视，并不代表指示文件的权限
+ls -l /tmp/issue.hard:想到与 cp -p ,但是又可以同步更新
+硬链接的 id与源文件相同
+
+4.2.1
+u所有者  g所有组 o其他人
+chmod更改权限
+change the permissions mode of a file
+chmod {+-=}{rwx}
+chmod u+x test.txt (给u权限x(执行))
+chmod g+w, o-r testtxt
+chmod g=rwx text.txt
+用的更多的是数字的方式：
+r---4 /  w---2/ x ---1
+rwxrw-r--
+7 6 4
+chmod 777 test.txt 
+532: rx--wx-w-
+chmod -R(递归修改) 改变一个文件面所有的文件
+
+能够删除一个文件，是对这个文件的目录有写（x）权限
+r:ls
+w:touch/mkdir/rmdir/rm 
+x:cd
+rx 一般是同时出现的 
+
+
+4.2.2
+
+4.3.1
+find:少用搜索
+find [搜索范围] [匹配条件]
+find /etc -name init(精准搜索，只搜索init)
+find /etc -name *init*
+find /etc -name init???(init后面匹配三个字符)
+find /etc -iname(不区分大小写)
+find /etc -size +n -n n （大于，小于，等于）
+n为数字块为512字节 0.5k，100M=102400kb = 204800
+find /etc -size +204800(大于100M的的文件会出来)
+find /home -user shenchao
+find /etc -cmin -5 改变文件属性
+          -mmin -5 改变文件内容
+          -
+
+
+-a:表示and
+find /etc -size -204800
+-a
+-o
+
+
+
+
+
+
+
+
+
+
+强化学习reinforcement learning
+0.
+Q learning
+Policy Gradient
+
+不理解环境（model-Free RL）
+Q learning
+Sarsa
+Policy Gradients
+
+理解环境（model-based RL）
+多出来一个建模
+方法和model-free一样
+可以想象来预测下一步的结果
+
+
+基于概率（policy-based RL)
+基于概率行动不一定选择最高的概率
+Policy Gradients
+基于价值（Value-Based RL）
+选择价值最高的
+只能选择离散的，连续的无能为力
+Q learning; Sarsa
+
+基于二者结合用的方法是 actor-critic 基于概率进行动作，然后基于动作，估计价值
+加速了Policy gradients的学习过程
+
+回合更新（monte-carlo update）
+基础版的Policy Gradients
+monte-carlo learning
+单步更新（temporal-difference update）（有效率，常用）
+Q learning
+Sarsa
+升级版的Policy Gradients
+
+在线学习（on-policy）
+Sarsa
+Sarsa（lambda）
+离线学习（off-policy）
+Q learning
+Deep Q Network
+1
+2
+3 讲的很好，这节需要重复看
+4 例子1
+5，6 例子2
+7， 8Sarsa
+9Sarsa(lambda)
+
+
+
+
+
+
+
+
+
+
+11/1
+数据>=模型>=融合
+lightGBM:不需要one-hot只需要告诉它这行需要处理（Microsoft）
+XGboost需要处理one-hot
+model ensemble
+ensemble learning 是一组individual learner的组合
+base learner 如果individual learner 是同质
+component learner 如果individual learner 是异质
+learner: h1 h2 h3 h4
+统计上，可能四个的平均更接近f
+计算上，如果你SGD时的函数是非凸的，多个模型融合能够防止局部极值的出现
+
+
 
 
 
