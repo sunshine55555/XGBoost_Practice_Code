@@ -1,4 +1,5 @@
 
+
 1 feature rescaling
 algorithm affteced by feature rescaling:
 SVM:缩放以后，你的超平面会改变
@@ -157,7 +158,85 @@ find /etc -size -204800
 -o
 
 
+11/2
+5.1常用操作
+1
+Vim:没有菜单，只有操作
+以命令模式为中心： vi filename vi=Vim
+esc 进入 命令模式
+i/a/o 进入插入模式
+i: 
+命令模式后 按回车 ':'进入编辑模式
+命令模式后 ':wq' 退出
+标记行号:set nu   取消:set nonu
+命令模式与编辑模式的常用命令：
+2
+定位：
+gg 回到第一行
+G 到最后一行
+:1000  和 1000G 都是到第1000行
+:n = nG
+$行尾（用钱铺垫） 0行首
+3
+删除命令：
+x 
+nx 
+dd删除光标所在行   ndd删除n行 
+dG 光标到文末尾全部删除
+D 光标到行尾都删除（只是这一行）—
+:n1, n2d : ':100, 200d' 删除了100到200行
+4
+复制和粘贴命令：
+yy 复制当前行
+nyy 当前以下n行
+dd 剪切当前行
+ndd 当前以下n行
+p, P 粘贴在当前光标所在行下或行上
+5
+替换或取消的命令
+r：然后可以替换
+R：进入替换状态
+u:undo 回复上一步操作
+6
+搜索和搜索替换命令
+/ftp ：找需要的ftp  n:next下一行
+':set ic' 不区分大小写 
+':%s/old/new/g'全文替换制定字符串
+':n1,n2s/old/new/g' 在一定范围内替换制定字符串
+最后一个换成 c就是替换的时候询问确认
+7
+保存和退出
+':w' 保存修改
+':w new_filename'另存为制定文件
+':wq'保存修改并退出
+'ZZ' 保存修改并退出
+':q!'不保存修改退出
+':wq!' 保存修改并退出
 
+5.2Vim使用技巧
+':r 文件名'将文本内容导入到光标所在的位置
+':!which ls'
+':map '
+:r !date
+:!which less
+I:调到行首并且插入模式
+0：调到行首
+
+注释：
+':map ctrl+v+p/ ctrl+v ctrl+p' P就变成了快捷键。
+:map ^P I#<ESC> 
+:set nu
+':1,4s/^/#/g' 第一行到第四行开头加上# （^:表示去行首）
+':1,4s/#//g' 所有的#都去掉
+':1,4s/^#//g' 行首的#去掉
+:ab a based
+':map ^B 0x'
+':map ^H '
+
+/home/.vimrc   (里面只能是一些命令)
+set num
+ab mymail yonghaoduan@qq.com
+ab shenchao fengjie
 
 
 
@@ -206,17 +285,156 @@ Sarsa（lambda）
 离线学习（off-policy）
 Q learning
 Deep Q Network
+
 1
 2
 3 讲的很好，这节需要重复看
 4 例子1
 5，6 例子2
 7， 8Sarsa
-9Sarsa(lambda)
+9Sarsa(lambda)                  
+
+
+k
+
+
+
+11/1
+数据>=模型>=融合
+lightGBM:不需要one-hot只需要告诉它这行需要处理（Microsoft）
+XGboost需要处理one-hot
+model ensemble
+ensemble learning 是一组individual learner的组合
+base learner 如果individual learner 是同质
+component learner 如果individual learner 是异质
+learner: h1 h2 h3 h4
+统计上，可能四个的平均更接近f
+计算上，如果你SGD时的函数是非凸的，多个模型融合能够防止局部极值的出现
+
+stacking
 
 
 
 
+
+
+11/2
+ML--->DL 
+神经网络非线性能力及原理
+1.感知机与逻辑门
+2.强大的空间非线性切分能力
+3.网络表达力与过拟合问题
+4.BP算法与SGD（优化方法主要用这个，非凸的应对，可能能跳过最低点，或者样本没办法直接全部加入到内存当中）
+代码示例：
+1. TensorFlow多层感知器非线性切分
+2. 神经网络分类（非线性）示例
+3. Google Wide&&Deep Model
+
+应用：
+图像上的应用:自动的图像上的特征的抽取和组合
+图像的检索，相册的自动分类，无人超市自动超市，自动驾驶，图像和大师手绘画合并，模仿文本写字
+NLP上的应用，翻译系统（OCR+text translation）
+综合应用；问答系统
+**分类问题用的比较多
+
+1
+线性分类器**得分函数**
+f(x,W)(x:图像数据，W:权重/参数)
+10x1 = 10x3072  3072x1 最后为10x1 为是个类别
+[32x32x32]
+ R  G  B 
+3*4 4*1 3
+W   X   b 
+损失函数：（别名cost function 代价函数、客观度/objective）
+给定W, 可以有像素映射到类目得分
+可以调整参数/权重W， 使得映射的结果和实际类别吻合
+损失函数是来衡量吻合度的
+
+设置delta为错误类别到正确类别的最短距离，如果距离小于delta，则认为有loss记录下差值（距离正确类别的距离-delta）
+
+交叉熵损失（cross entrophy loss）
+
+2.1
+感知机 
+input layer; hidden layer1; hidden layer2; output layer
+添加少量隐藏层 =》 浅层神经网络
+添加多层隐藏层 =》 深层神经网络（DNN）
+
+神经元完成【逻辑与】
+底层是做逻辑运算：and 
+0 0 0
+0 1 0
+1 0 0
+1 1 1
+举例：theta0 +x1theta1+x2theta2
+通过设置theta的这三个数字来使得上面的001这几类符合预期
+神经元完成【逻辑或】or
+找一组theta参数满足or的要求
+0 0 0 
+0 1 1
+1 0 1
+1 1 1 
+通过对线性分类器的AND和OR的组合=》完美对平面样本点分布进行分类
+
+2.2
+| 结构|决策区域类型 |异或问题
+-----
+| 无隐层|由一个超平面分成两个 |
+|单隐层（N多神经元） |开凸区域或闭凸区域 |
+|双隐层    |任意形状 （复杂度由单元数目决定）|
+神经网络表达力和过拟合：
+2.2.2
+（1）单理论上单隐层的神经网络可以逼近任何连续函数（只要隐层的神经元个数足够多）
+（2）虽然从数学上看表达能力一致，但是多隐藏层的神经网络比但隐藏层的神经网络工程效果好很多
+（3）对于一些分类数据（比如CTR预估力），3层神经网络效果优于2层神经网络，但是如果把层数再不断增加到4,5,6层，对最后结果的帮助就没有那么大的跳跃了。
+（4）图像数据比较特殊，是一种深层的结构化数据，深层次的CNN，能够更充分和准确的吧这些层级信息表达出来
+2.2.3
+提升隐层层数或者隐层神经元个数，神经网络的空间表达能力变强
+过多的层数和节点会带来过拟合的问题
+不要是同通过降低神经网络参数量来缓解过拟合，用正则化或者dropout
+
+2.3
+神经网络之传递函数（激活函数，为非线性的变换）
+sigmoid S函数 VS 双S函数
+f(x) = 1/(1+exp(-x)) VS f(x) = (1-exp(-x))/(1+exp(-x))
+**输入进来先经过一个线性函数然后再讲过一个f，这个f可能是sigmoid或者Relu或者双S等等其他。**
+2.4
+神经网络之**BP算法**
+正向传播求损失，反向传播回传误差
+根据误差信号修正每层的权重
+
+运用**SGD**(batch输入)
+
+前向（前馈）运算
+反向传播
+
+wide&&deep modelcd 
+
+18课
+
+0.1
+basic calcus, eg: derivatives
+basic knowledge of machine learning eg: linear classifier, loss function, overfitting, underfitting
+basic optimization algorithm eg:SGD
+0.2
+you will learn in this lecture:
+how a neural network outputs a prediction given an input feature vector;
+how to train a neural network given training data, i.e. backpropagation
+practical techniques for tuning parameters of neural networks
+basic concepts of convolutional neural networks(ConvNets)
+how to apply ConvNets on a kaggle competition for top5%
+
+Recap: Cross-Entropy vs. Hinge
+Cross-Entropy会算一个概率，hinge不会
+
+
+z = Wx + b 
+a = alpha(z)
+s = U^T*a 
+
+consider hinge loss as our objective function. if we call the score computed for 'true' labeled data as s 
+and the score computed for 'false' labeled data as Sc. then the optimization objective is:
+                minimize J = max(delta + Sc -S, 0)
 
 
 
