@@ -1,5 +1,3 @@
-
-
 1 feature rescaling
 algorithm affteced by feature rescaling:
 SVM:缩放以后，你的超平面会改变
@@ -437,22 +435,549 @@ and the score computed for 'false' labeled data as Sc. then the optimization obj
                 minimize J = max(delta + Sc -S, 0)
 
 
+11/6
+李宏毅的讲义：
+**第七课** what is DL
+Ups and downs of Deep Learning:
+1986:backpropagation 
+2009:GPU
+2011:in speech recognition
+2012:win ILSVRC image competition
+
+Neural Network:
+different connection leads to different network structures
+Network parameter theta: all the weights and biases in the "neurons"
+连接方式：
+1.
+Fully connect feedforward network
+this is a function.
+input vector(x1, x2, x3...xn), output vector(y1, y2...ym)
+Given network structure, define a function set
+fully:层与层之间的neuron两两之间都要连接
+
+Deep = many hidden layers
+
+Matrix Operation:
+f([[1,-2],[-1,1]]*[1,-1]+[1,0]) =f([4,-2])
+两个input对应第一个neuron的权重；第二个的权重；input值；bias
+   f( W1*X+b1)
+   f( W2*a1+b2)
+   f( W3*a2+b3)
+   f( Wn*an-1+bn-1)
+如果f是sigmoid（用的少了）就是[0.98, 0.12]
+Using parallel computing techniques to speed up matrix Operation
+
+Output Layer:
+hidden layers:feature extractor replacing feature engineering
+output layer: multi-class classifier
+最后一层output layer加上softmax
+
+2.
+Example Application
+input image: 16*16=256pixel x1,x2...x256
+output 就是10个 y1, y2 ... y10  
+input: 256-dim vector 
+output: 10-dim vector
+中间的函数就是Neural Network
+A functtion set containing the candidates for Handwriting Digit Recodnition
+You need to decide the network structure to let a good function in your function set
+
+3.
+Questions:
+-How many layers? How many neurons for each layers
+Trial and Error + Intuition
+ML是抽feature，NN变成怎么构造网络
+-Can the structure be automatically determined？
+e.g. evolutionary Artificial Neural networks
+-Can we design the network structure?
+Convolutional Neural Network(CNN)
+
+4.
+goodness of function
+计算y与y_hat的loss
+用cross entrophy
+C(y, y_hat) = -sum(y_hat*ln(yi))
+Total loss L = sum(Ci)
+find a function in funciton set that minimizes total loss
+find the network parameters theta* that minimize total loss 
+5.
+解决方法就是：Gradient Descent
+L对每一个wi求偏微分，然后用原来的w减去对应的gradient，不断地更新就好了
+University Theorem:any continuous function f: can be 
+realized by a network with one hidden layer(given enough hidden neurons)
+
+**第四课** Gradient Descent
+
+
+**第八课** BP算法
+1. Chain Rule
+case1: x->y->z  (dz/dx) = (dz/dy)*(dy/dx)
+case2: x=g(s), y=h(s), z=k(x,y)
+s->x->z  dz/ds = (dz/dx)*(dx/ds) + (dz/dy)*(dy/ds)
+s->y->z
+
+2. Backpropagation
+z = x1w1 + x2w2 + b 
+a = f(z)
+l/w = (z/w) * (l/z)
+forward pass: compute z/w for all parameters 
+backward pass: compute l/z for all activation function inputs z
+comput l/z from the output layer 
+l/z = (a/z)*(l/a) 
+l/a = ()
+
+σ''(z) is constant because z is already determined in the forward pass
+
+
+**第九课** Keras
+tensorflow: very flexible and need some effort to learn
+Keras: easy to learn and use (still have some flexibility)
+
+DL三步骤：
+1. define a set of function
+2. goodness of function 
+3. pick the best function 
+fully connected layer：用的dense表示
+1. define a set of function
+model = Sequential()
+model.add(Dense(input_dim = 28*28,ouput_dim=500))
+model.add(Activation('sigmoid'))
+#softplus, softsign, relu, tanh, hard_sigmoid, linear
+model.add(Dense(output_dim=500))
+model.add(Activation('sigmoid'))
+model.add(Dense(output_dim = 10))
+model.add(Activation('softmax'))
+2. goodness of function
+model.compile(loss='categorical crossentropy', optimizer = 'adam',metrics=['accuracy'])
+3.1 Configuration(optimizer:用什么样的方式找)
+SGD, RMSprop, Adagrad, Adadelta, Adam, Adamax, Nadam
+3.2 Find the optimal network parameters 
+model.fit(x_train, y_train, batch_size=100,nb_epoch=20)
+score = model.evaluate(x_test, y_test)
+print ('Total loss on Testing set:', score[0])
+print ('Accuracy of Testing Set:', score[1])
+result = model.predict(x_test)
+
+x_train:two dimensionality:1:样本个数；2：pixel（28*28=784）
+y_train:two dimensionality:1:样本个数；2:10个数
+
+4.
+Mini-batch: we do not really minimize total loss
+step:
+> **randomly** initialize network parameters
+> pick the 1st batch 计算第一个batch L1 = l1+l31....
+  update parameters once
+> pick the 2nd batch 计算L2=>update parameters once
+until all min-batches have been picked 
+这算一个epoch, 然后重复一定次数的epoch
+5.
+batch_size=1 相当于 stochastic gradient Descent
+batch size influences both speed and performance. have to tune it 
+Speed：
+smaller batch size means more updates in one epoch 
+batch size=10相比于SGD is more stable and converge faster
+因为用了平行运算。但是也不能太大，因为这样电脑会卡住
+very large batch siez can yield worse performance 
+5.1 speed- maxtrix operation
+why mini-batch is faster stochastic gradient descent?
+SGD: z1 = w1*x  z1 = w1*x
+mini-batch:  z1 z1 = w1*matrix(x x) 下面比较快
+6 save and load models
+keras.io/getting-started/faq/#how-can-i-save-a-keras-model
+
+
+**第十课** Tips for Deep Learning 
+Recipe of Deep learning
+1. 
+do not always blame overfitting in deep learning
+当你看到testing error上更多的layer会表现差，可能并不是过拟合
+应该去看training data了解一下
+
+dropout for good results on testing data
+
+2. 
+good results on training data:
+**new activation funciton**
+deeper usually does not imply better: 并不一定是overfitting
+可能是activation function的从错误，导致Vanishing Gradient 的问题(对sigmoid) 
+最近的层是smaller gradients & learn very slow & almost random
+靠后面的层 larger gradients & learn very fast & already converge
+原因：
+sigmoid函数；
+intuitive way to compute the derivatives 
+x1, x2...xw sigmoid 映射时将变化量的幅度一次次降低
+可以设置dynamic的learning rate来改善或者换掉activation function
+
+3. ReLU rectified linear unit
+reason: 1.fast to compute; 2.biological reason; 
+3.infinite sigmoid with different biases; 4.vanishing gradient problem
+input大于0为线性；input<=0,为0.
+
+3.1 ReLU-variant
+leaky ReLU 小于0时用 a=0.01*z  
+Parameteric ReLU a=alpha*z (alpha also learned by gradient descent)
+最新：ELU(Exponential Linear Unit)左边是非线性
+
+自动学习activation function的方法叫Maxout
+ReLU is a special case of Maxout
+4. 
+RMSProp : Root Mean Square of the gradients with previous gradients being decayed 
+
+5. Hard to find optimal network parameters
+Momentum: still not guarantee reaching global minima, but still give some hope
+Movement = - partialL/partialw + Momentum
+Vanilla Gradient Descent:(一般的) VS. Momentum 
+5.1 Momentum
+vi is actually the weighted sum of all the previous gradient:
+
+6.
+Adam = RMSProp + Momentum 
+
+7. Early Stopping 
+Total loss 与 epoch 之间的关系，如果随着epoch的增加，total loss还没有降低就停止
+
+8.
+Regularization
+our brains prunes out the useless link between neurons 
+把没有连接prune out
+new loss function to be minimized 
+    find a set of weight not only minimizing original cost but also close to zero 
+L2的regularization叫做weight decay（因为W每次都乘以一个小于1的值）
+L1的regularization总是delete 
+L2的weight比较平均？ L1的weight有些很大有些接近0 
+
+9. dropout
+Training:
+each time before updating the parameters
+    each neuron has p% to dropout 
+        the structure of the network is changed
+    using the new network for training
+for each mini-batch, we resample the dropout neurons
+Testing: No dropout
+if the dropout rate at training is p%, all the weights times 1-p%
+assume that the dropout rate is 50%. if a weight w=1 by trainin, set w=0.5 for testing 
+Intuitive Reason: 
+
+why the weights should multiply(1-p%)(dropout rate) when testing?
+dropout is a kind of ensemble
+ensemble: training set -set 1/2/3/4
+产生四个 network 1/2/3/4 
+train a bunch of networks with different structures 
+Testing of Dropout: Testing data x
+activation function是线性的时候，dropout表现的尤其好
+
+
+**第11课** Convolutional Neural Network
+1.
+network 架构可以自己设计
+不容易overfitting biaes比价小，是fully connected network的简化
+why CNN for image?
+some patterns are much smaller than the wole image
+
+1.1A neuron does not have to see the whole image to discover the pattern 
+1.2the same patterns appear in different regions
+    they can use the same set of parameters 
+1.3subsampling the pixels will not change the object bird
+    less parameters for the network to process the image
+
+image -> convolution -> max pooling -> convolution -> max pooling(can repeat many times)
+-> flatten -> fully connected feedforward network -> dog cat...
+property 1: some patterns are much smaller than the whole image
+property 2：the same patterns appear in different regions
+property 3：subsmapling the pxels will not change the object 
+
+2. Convolution 
+6*6image 通过学习得到filter（network parameter to be learned;类似weight）
+filter为3*3;说明这个image可以学习到3*3；
+通过3*3在原iamge上移动，stride=1，每次向右移动一格，并且与filter相乘；
+与所有filter相乘后，得到 feature map
+从6*6的image，与2个3*3的filter操作后得到2个4*4的image，然后4*4image每个pixel有两个值表示
+
+3. CNN-colorful image 
+filter 是 3*3*3 的shape 
+colorful image 是由RGB三色表示，每个pixel需要三个数值表示 
+
+4. Max pooling
+把filter乘完以后的4*4分为4个2*2，然后选择每个2*2里面最大大的值
+这样6*6变成4*4再变成2*2 
+convolution->max pooling 可以做多次，每做一次，都是一个新的image
+
+5. flatten
+拉直2*2*2的值然后进行fully connected feedforward network
+
+6. CNN in Keras
+model2.add(Convolution2D(25, 3, 3, input_shape=(28,28,1)))
+#25filter 大小3*3; input image size28*28; 1:代表channel个数，1黑白；3彩色
+model2.add(MaxPooling2D((2,2)))
+图像大小变化：28*28 -> 25*26*26(25filter) -> 25*13*13(max pooling 2*2)
+model2.add(Convolutino2D(50, 3, 3))
+model2.add(MaxPooling2D((2,2)))
+25*13*13 ->(50*3*3,这里parameters for each filter是25*3*3=225) 50*11*11 -> 50*5*5(max pooling)#直接忽视奇数的影响
+flatten 50*5*5=1250
+model2.add(Dense(output_dim=100))
+model2.add(Activation('relu'))
+model2.add(Dense(output_dim=10))
+model2.add(Activation('softmax'))
+
+7. Live Demo
+the output of the k-th filter is a 11*11 matrix
+degree of the activation of the k-th filter: a^k=sum(a_ij)
+star x = argmax a^k(gradient ascent(max))
+
+
+
+Pixel x_ij
+y_k: the predicted class of the model 
+
+8. Deep Dream 
+modify image: 夸张数值，大的更大小的更小
+
+
+**第十二课** Why DL
+Fat+short V.S. Thin+Tall
+1.  Modularization
+模组化； 可以直接分成四个classifier但是有些分类的数目很小训练比较难。所以可以分成两个basic classifier 然后根据里面的两个classifier里面的组分成四个classifier
+从Deep上看，每一层的neuron都是一格basic classifier
+the modularization is automatically learned from data
+modularization need less training data
+DL 是在做模组化这样深度就显得比较重要
+
+modularization-speech
+
+2.
+DNN input: one acoustic feature
+DNN output: Probability of each state
+size of output layer = No. of state 
+all the states use the same DNN
+
+The lower layers detect the manner of articulation 
+all the phonemes share the results from the same sets of detectors
+use parameters effectively
+
+Universality theorem: any continuous function f can be realized by a network with one hidden layer 
+虽然shallow network can represent any function,但是 however, usning deep structure is more effective 
+
+3.
+DL is more effective 
+
+4. End-to-end learning(只有input和output)
+> production line
+model(hypothesis hypothesis)
+
+complex task：对于语音识别来说，经过DNN的转化，看似没有规律的特征变得有规律了。
+好处：very similar input, different output/ very different input, similar output 
 
 
 
 
-11/1
-数据>=模型>=融合
-lightGBM:不需要one-hot只需要告诉它这行需要处理（Microsoft）
-XGboost需要处理one-hot
-model ensemble
-ensemble learning 是一组individual learner的组合
-base learner 如果individual learner 是同质
-component learner 如果individual learner 是异质
-learner: h1 h2 h3 h4
-统计上，可能四个的平均更接近f
-计算上，如果你SGD时的函数是非凸的，多个模型融合能够防止局部极值的出现
+**第十三课** Semi-Supervise的 Learning
 
+unlabeled data>> label data
+分为
+transductive learning: unlabeled data is the testing data
+inductive learning: unlabeled data is not the testing data 
+why Semi-supervised learning?
+collecting data is easy, but collecting 'labelled' data is expensive 
+we do Semi-supervised learning in our lives
+
+1. semi-supervised learning for generative model
+initialization: theta = {}
+
+> Maximum likelihod with labeled data 
+
+> Maximun likelihood with labelle + unlabelled data 
+
+2. low-density separation assumption
+2.1
+black or white 
+self-training:
+用已有label的data去训练模型，然后用模型去预测没有label的数据，叫做Pseudo-label
+similar to semi-supervised learning for generative model
+Hard label V.S. Soft label
+Considering using neural network
+star theta(network parameter) from labelled data
+hard label用的是low density separation的概念。soft label does not work(非黑即白)
+2.2 entropy-based regularization 
+entropy去表示数据的集中程度；
+entropy of y^u(evaluate how concentrate the distribution y^u is)
+E(y^u) = -sum_mi(y_mi)*ln(y_mi)
+构造一个loss function：前面是label data是否标记成功，后面部分是unlabel data的熵的加和
+
+outlook: semi-supervised SVM:
+
+3. smoothness assumption 
+近朱者赤近墨者黑
+assumption: 'similar' x has the same y_hat 
+more precisely: x is not uniform; if x1 and x2 are close in a high density region, y1 and y2 are the same
+high density:中间存在的数据更加密集
+实现方法：cluster and then label 
+graph-based approach-graph construction
+how to konw x1 and x2 are close in a high density region(connected by a high density path)
+define the similarity s(xi, xj) between xi and xj
+add edge: K Nearest Neighbor 
+        : e-Neighborhood (距离大于额，才会连接)
+Edge weight is proportional to s(xi,xj)(相似度)
+定义方法用下面这个：Gaussian Radial Basis Function:(RBF)
+   s(xi, xj) = exp(-gamma||x^i-x^j||^2)
+
+define the smoothness of the labels on the graph 
+ S = 0.5*sum_ij(y^i-y^j)^2 = 
+
+4. better representation 
+find the latent factors behind the observation 
+the latent factors are better representations 
+
+
+**第十四课**(听得好差，关注matrix Factorization,理论上过好记下笔记，能够说明白，这是第一阶段，因为概念太多了，不可能全都特别明白，第一波先这样。把coding能力搞起来 )
+Unspervised Learning
+Clustering & Dimension
+generation(无中生有)  Reduction(化繁为简)
+only having funciton input
+
+1. Clustering 
+多少clusters需要经验 
+> K-means 
+Clustering X = {x^1, x^2.... x^N} into K clusters
+initialize cluster center c^i, i=1, 2, 3
+
+> Hierarchical Agglomerative Clustering (HAC)
+1.1 build a tree(建立两两之间的相似度)
+1.2 pick a threshold 来确定你要分几个center
+
+> distributed representation
+clustering缺陷: an object must belong to one cluster 
+用vector表示
+
+2. Dimension Reduction
+找一个function：the dimension of z would be smaller than x 
+> feature selection 
+> Principle component analysis(PCA) (Bitshop, chapter 12)
+
+
+2.2
+PCA: z = Wx(找W) 
+z_1 = w^1 * x 
+project all the data points x onto w^1, and obtain a set of z_1 
+we want the variance of z_1 as large as possible 
+z_1 = w^1 * x 
+Var(z1) = sum(z1-z1_bar)^2; ||W^1||_2 = 1  
+z_2 = w^2 * x 
+Var(z2) = sum(z2-z2_bar)^2; ||W^2||_2 = 1
+w^1*w^2 = 0
+投影到k维，就是k个w
+W = [w1, w2,...wk] orthogonal matrix 
+> PCA-decorrelation 
+
+Linear Dimension Reduction
+x = c1u1 + c2u2... + ckuk + x_bar 
+x - x_bar = c1u1+c2ur ...+ckuk = ||(x-x_bar)-x_hat||
+
+pixels in a digit image; component
+[c1, c2... ck] represents digit image
+
+3. what happends to PCA?
+image = a1w1 + a2w2 ...(a can be any real number)
+PCA involves adding up and subtracting some components(images)
+    then the components may not be 'part of digit'(比如8减去下面部分，然后再加一竖，下面类似0的并不是9的部分。) 
+类似的笔画部分是用 Non-negative matrix factorization(NMF)
+    首先NMF强迫forcing a1, a2.... be non-negative and forcing w1, w2... be non-negative(more like 'parts of digits')
+这样NMF就会自然的组合起来为image，而不是像pca加加减减
+
+PCA对matrix做LDA
+
+PCA looks like a neural network with one hidden layer(linear activation function)
+Autoencoder 
+
+
+4. weakness of PCA 
+PCA会无法考虑到分类问题的降维
+LDA是考虑分类情况的降维 
+Linear：
+
+
+5. Matrix Factorization
+for topic analysis
+latent semantic analysis(LSA)
+横纵坐标标出：横为词语，纵轴为文章，value为出现的次数
+term frequency(weighted by inverse document frequency)
+一个词在大部分文章都有的，它的inverse document frequency就低，只在一个文章里出现，就大，就重要
+
+将matrix分解的话，可以找到文章和词汇背后的latent factors
+
+PLSA:   
+LDA：
+
+
+
+**第十五课** Neighbor Embedding
+Manifold learning:高维空间中的低纬空间
+
+1. Locally linear Embedding(LLE)
+xi--(wij)--xj 
+wij represents the relation between xi and xj 
+find a set of wij minimizing sum_i(xi-sum_j(wij*x^j))
+then find the dimension reduction results z^i and z^j based on wij 
+LLE是让xi变成zi，xj变成zj，然后wij不变
+
+2. Laplacian Eigenmaps
+Graph-based approach 
+S = 0.5*sum(wij*(z^i-z^j)^2)
+z^i=z^j=0
+Giving some constraints to z:
+if the dim of z is M, span(z1,z2,...zN)=R^M
+spectral clustering: clustering on z
+
+
+3. T-distributed Stochastic Neighbor Embedding (t-SNE)
+擅长做visualization 
+
+
+
+**第十六课**  Deep-Auto-Encoder
+1. Auto-encoder 
+image -> NN encoder -> code(dimension reduction, compact representation of the input object)g
+code -> NN decoder -> image (can reconstruct the original object)
+
+De-noising auto-encoder 
+
+iamge+noise -> 'image' + encode -> c + decode -> x_hat
+
+
+2. Auto-encoder - Text Retrieval(文字搜寻) 
+将bag of word进行降维；vector space model
+
+3
+Auto-encoder similar image search（图片搜索）
+
+4
+solving slot filling by feedforward network?
+input: a work(each word is represented as a vector)
+32*32->8192->4096->2048->1024->512->256(code)
+根据pixel上的相似度；
+
+5.
+Auto encoder for CNN(进行先降维再reconstruct)
+iamge->convolution->pooling->convolution->pooling->code->deconvolution->unpooling->deconvolution->unpooling->deconvolution
+iamge <- as close as possible ->deconvolution
+
+unplooling:把max pooling取得的最大值及位置记住然后再返回，其他小的值给个小的即可；
+deconvolution：
+actually, deconvolution is convolution 
+deconvolution 是每个值乘以RGB三个weight，
+
+6.
+auto-encoder- Pre-training DNN
+greedy layer-wise Pre-training again
+output 10<-500<-1000<-1000<-785（input）
+input 784->(train auto encoder)1000->784(中间要regularization)
+
+
+
+
+**第二十课** RNN(recurrent neural network)
+slot filling (ticket booking system)
+I would like to arrive Taipei on November 2
+slot： destination； time of arrival
 
 
 
