@@ -437,6 +437,73 @@ and the score computed for 'false' labeled data as Sc. then the optimization obj
 
 11/6
 李宏毅的讲义：
+**第二课** Linear Regression
+step1 model
+step2 Goodness of Function
+step3 best function: Gradient descent 
+1. Gradient descent 
+对于线性回归来说：考虑loss function L(w) with one parameter w,b 
+> 首先先随机的选择初始的initial value w0, b0 
+> 计算 partial L/ partial w  &  partial L/ partial b 
+分别迭代 w 和 b 一直迭代下去 
+GD遇到的问题
+> very slow at the plateau & stuck at saddle point & stuck at local minima 
+back to step1:
+
+2.
+为了防止过拟合加入正则化，正则化项加入了wi，为了是得到较小的w
+因为小的w，可以让函数更加的平滑，对于输入的变化，输出的变化不激变动（平滑）
+smaller wi means smooth function
+why?:
+we believe smoother funcition is more likely to be correct 
+
+**第三课** Error
+a more complex model does not always lead to better performance on testing data
+error due to  'bias' and 'variance'
+1. Estimator
+estimate the mean of a variable x: 
+variance 描述的是你的值，距离μ的散布程度，larger μ，散的越小
+
+
+
+
+
+
+
+
+
+
+**第四课** Gradient Descent 
+1. 
+tip1:tuning your learning rate 
+set the learning rate
+you can always visualize relationship between No. of parameters updates and Loss 
+1.1 Popular idea: reduce the learning rate by some factor every few epochs.
+> at the begining, we are far from the destination, so we use larger learning rate 
+> after several epochs, we are close to the destination, so we reduce the learning rate 
+> E.g. 1/t decay: 
+1.2 lerning rate cannot be one-size-fits all
+Giving different parameters different learning rates  
+1.3 Adagrad 
+Divide the learning rate of each parameters by the root mean square of its previous derivatives
+wt+1 <-- wt - constant * g^t /square(sum(g^i)2)
+|first derivative|/second derivative 
+
+2
+tip2: Stochastic Gradient Descent 
+
+3 feature scaling 
+减均值除以标准差； 减去最小除以range
+4 More limitation of Gradient Descent 
+更多时候会在高原地区，梯度很小让你以为是到了极值点附近
+> very slow at the plateau & stuck at saddle point & stuck at local minima 
+
+
+
+
+
+
+
 **第七课** what is DL
 Ups and downs of Deep Learning:
 1986:backpropagation 
@@ -978,6 +1045,823 @@ input 784->(train auto encoder)1000->784(中间要regularization)
 slot filling (ticket booking system)
 I would like to arrive Taipei on November 2
 slot： destination； time of arrival
+
+2.2
+from mxnet import ndarray as nd
+nd.zeros((3,4))
+x = nd.ones((3,4))
+nd.array([[1,3],[2,3]])
+y = nd.random_normal(0,1,shape=(3,4))
+y.shape
+y.size
+x+y 
+x*y
+nd.dot(x,y.T )
+nd.exp(y)
+a = nd.arange(3).reshape((3,1))
+b = nd.arange(2).reshape((2,1))
+a+b 
+2.2.4
+import numpy as np 
+x = np.ones((2,3))
+y=nd.array(x) # numpy -> mxnet 
+z = y.asnumpy() # mxnet -> numpy 
+2.2.5
+x= nd.ones((3,4))
+y= nd.ones((3,4))
+before = id(y)
+y = y+x 
+id(y)==before 
+z = nd.zeros_like(x)
+before = id(x)
+z[:] = x+y 
+id(z) == before 
+nd.elsewise_add(x,y, out=z)
+id(z) == before
+2.2.6
+x=nd.arange(0,9).reshape((3,3))
+x[1:3]截取index为1,2的列 
+x[1,2]
+x[1:2, 1:3] index=1, columns=1,2
+x[1:2, 1:3] = 9多维写入
+2.3 autograd 更新模型参数并求解
+import mxnet.ndarray as nd 
+import mxnet.autograd as ag
+x = nd.array([[1,2],[3,4]])
+x.attach_grad() #申请对x求导所需的空间
+with ag.record():#记录求导程序
+	y=x*2
+	z=y*x
+z.backward() #对z进行求导
+x.grad #
+2.3.2对控制流求导
+def f(a):
+	b=a*2
+	while nd.norm(b).asscalar()<1000:
+		b=b*2
+	if nd.sum(b).asscalar()>0:
+		c=b 
+	else:
+		c=100*b 
+	return c 
+a = nd.random_normal(shape=3)
+a.attach_grad() 
+with ag.record():
+	c= f(a)
+c.backward()
+a.grad 
+2.3.3 
+with ag.record():
+	y=x*2
+	z=y*x 
+head_gradient = nd.array([[10,1],[0.1,0.01]])
+z.backward(head_gradient)
+x.grad 
+3.1线性回归从0开始
+3.1.2创建数据集
+from mxnet import ndarray as nd 
+from mxnet import autograd 
+num_inputs = 2
+num_examples = 1000 
+true_w = [2, -3.4]
+true_b = 4.2 
+X = nd.random_normal(shape=(num_examples,num_inputs))
+y = true_w[0]*X[:,0] +true_w[1]*X[:,1] + true_b
+y += 0.01*nd.random_normal(shape=y.shape)
+
+3.1.3数据读取  batch_size 
+import random
+batch_size = 10
+def data_iter():
+	idx = list(range(num_examples))
+	random.shuffler(idx)
+	for i in range(0,num_examples, batch_size):
+		j = nd.array(idx[i:min(i+batch_size,num_examples)])
+		yield nd.take(X, j), nd.take(y,j)
+for data, label in data_iter():
+	print (data, label)
+3.1.4初始化模型参数
+w = nd.random_normal(shape=(num_inputs, 1))
+b = nd.zeros((1,))
+params = [w, b]
+for param in params:
+	param.attach_grad()
+3.1.5定义模型
+def net(X):
+	return nd.dot(X, w) + b 
+3.1.6损失函数
+def square_loss(yhat, y):
+	return (yhat- y.reshape(yhat.shape))**2
+3.1.7优化
+def SGD(params, lr):
+	for param in params:
+		param[:] = param - lr*param.grad 
+3.1.8训练
+def real_fn(X):
+	return 2*X[:, 0] - 3.4*X[:, 1] + 4.2
+learning_rate =0.001
+epochs = 5
+niter=0
+losses = []
+moving_loss = 0
+smoothing_constant = 0.01
+for e in range(epochs):
+	total_loss = 0
+	for data, label in data_iter(): #mini_batch SGD
+		with autograd.record():
+			output = net(data)
+			loss = square_loss(output, label)
+		loss.backward()
+		SGD(params, learning_rate)
+		total_loss +=nd.sum(loss).asscalar()
+		niter +=1
+		curr_loss = nd.mean(loss).asscalar()
+		moving_loss = (1-smoothing_constant) * moving_loss
+
+3.2线性回归使用gluon
+3.2.1创建数据集
+from mxnet import ndarray as nd 
+from mxnet import autograd 
+from mxnet import gluon 
+num_inputs = 2
+num_examples = 1000
+true_w = [2, -3.4]
+true_b = 4.2
+X = nd.random_normal(shape=(num_examples, num_inputs))
+y = true_w[0] * X[:, 0] + true_w[1] * X[:, 1] + true_b
+y += .01 * nd.random_normal(shape=y.shape)
+3.2.2读取数据
+batch_size = 10 
+dataset = gluon.data.ArrayDataset(X, y)
+data_iter = gluon.data.DataLoader(dataset, batch_size, shuffle=True)
+3.2.3定义模型
+net = gluon.nn.Sequential()
+net.add(gluon.nn.Dense(1)) #输出参数为1个
+3.2.4初始化模型参数
+net.initialize()
+3.2.5损失函数
+square_loss = gluon.loss.L2Loss()
+3.2.6优化
+trainer = gluon.Trainer(
+		net.collect_params(), 'sgd', {'learning_rate':0.1})
+3.2.7训练
+epochs=5
+batch_size=10
+for e in range(epochs):
+	total_loss=0
+	for data, label in data_iter:
+		with autograd.record():
+			output = net(data)
+			loss = square_loss(output, label)
+		loss.backward()
+		trainer.step(batch_size)
+		total_loss +=nd.sum(loss).asscalar
+print ("Epoch %d, average loss: %.2f" %(e, total_loss/num_examples))
+
+
+dense = net[0]
+dense.weight.data()
+true_b, dense.bias.data()
+
+3.3多类逻辑回归从0开始
+from mxnet import gluon 
+from mxnet import ndarray as nd 
+def transform(data, label):
+	return data.astype('float32')/255, label.astype('float32')
+mnist_train = gluon.data.Vision.FashionMNIST(train=True, transform=transform)
+mnist_test = gluon.data.Vision.FashionMNIST(train=False, transform=transform)
+
+data, label = mnist_train[0]
+data.shpae, label 
+
+import matplotlib.pyplot as plt 
+def show_images(images):
+	n = images.shape[0]
+
+
+def get_text_labels(label):
+	text_labels = ['t-shirt', 'trouser', 'pullover', 'dress,', 'coat',
+'sandal', 'shirt', 'sneaker', 'bag', 'ankle boot']
+	return [text_labels[int(i)] for i in label]
+
+data, label = mnist_train[0:9]
+show_images(data)
+get_text_labels(label)
+3.3.2 数据读取 
+batch_size=26
+train_data = gluon.data.DataLoader(mnist_train, batch_siez, shuffle=True)
+test_data = gluon.data.DataLoader(mnist_test, batch_size, shuffle=False)
+3.3.3初始化模型参数
+先分析出来自己的模型参数，x：N*(28*28) w:(28*28)*10 b:10 
+num_inputs = 784
+num_outputs =10
+W = nd.random_normal(shape=(num_inputs,num_outputs))
+b = nd.random_normal(shape=num_outputs)
+parmas = [W, b]
+for param in parmas: #对模型参数附上梯度
+	param.attach_grad
+3.3.4定义模型
+from mxnet import ndarray as nd 
+def softmax(X):
+	exp = nd.exp(X)
+	partition = exp.sum(axis=1, keepdims =True)
+	return exp/partition 
+e.g. :小栗子
+X = nd.random_normal(shape=(2,5))
+X_prob = softmax(X)
+X_prob.sum(axis=1)
+
+def net(X):
+	return softmax(nd.dot(X.reshape(-1, num_inputs),W) + b )
+	#行为样本数，列为参数数量 N*W x W*1 +1维
+
+3.3.5交叉熵损失函数
+def cross_entropy(yhat, y):
+	return -nd.pick(nd.log(yhat), y)
+#nd.pick(） 选出nd.log(yhat)的第y个值
+
+3.3.6计算精度
+def accuracy(output, label):
+	return nd.mean(output.argmax(axis=1) == label).asscalar() 
+def evaluate_accuracy(data_iterator, net):
+	acc = 0.
+	for data, label in data_iterator:
+		output = net(data)
+		acc += accuracy(output, label)
+	return acc/len(data_iterator) 
+evaluate_accuracy(test_data, net)
+3.3.7
+import sys
+sys.path.append('..')
+from utils import SGD 
+
+from mxnet import autograd 
+learning_rate = 0.1 
+for epoch in range(5):
+	train_loss = 0. 
+	train_acc = 0.
+	for data, label in train_data:
+		with autograd.record():
+			output = net(data)
+			loss = cross_entropy(output, label)
+		loss.backward()
+
+		SGD(params, learning_rate/batch_size)
+		train_loss +=nd.mean(loss).asscalar() 
+		train_acc += accuracy(output, label)#看匹配的正确率
+
+	test_acc = evaluate_accuracy(test_data, net) 
+	#这里的test_data 是有batch_size的，然后在evaluate_accuracy里面用for
+	#每个batch算一个accuracy，然后累加到acc里面再算平均值
+    #def net()定义的损失函数的模型，在evaluate_accuracy里面传的是函数
+   print('Epoch %d. Loss: %f, Train acc %f, Test acc %' %(epoch, train_loss/len(train_data),train_acc/len(train_data), test_acc))
+3.3.8 预测
+data, label = mnist_test[0:9]
+show_images(data)
+
+
+
+3.4 多类逻辑回归使用gluon
+3.4.1获取和读取数据
+import sys 
+sys.path.append('..')
+import utils
+batch_size=256
+train_data, test_data = utils.load_data_fashion_mnist(batch_size)
+
+3.4.2定义和初始化模型
+from mxnet import gluon 
+net = gluon.nn.Sequential()
+with net.name_scope():
+	net.add(gluon.nn.Flatten())
+	net.add(gluon.nn.Dense(10))
+net.initialize() 
+
+3.4.3softmax和交叉熵损失函数
+softmax_cross_entropy = gluon.loss.SoftmaxCrossEntropyLoss()
+3.4.4优化
+trainer = gluon.Trainer(net.collect_params(), 'sgd', {'learning_rate':0.1})
+3.4.5训练
+from mxnet import ndarray as nd 
+from mxnet import autograd 
+for epoch in range(5):
+	train_loss = 0
+	train_acc =0 
+	for data, label in train_data:
+		with autograd.record():
+			output = net(data)
+			loss = softmax_cross_entropy(output, label)
+		loss.backward()
+		trainer.step(batch_size) #???
+
+		train_loss += nd.mean(loss).asscalar 
+		train_acc += utils.accuracy(output, label)
+	test_acc = utils.evaluate_accuracy(test_data, net) 
+	print 
+3.4.6结论
+3.4.7练习
+
+
+3.5 多层感知机-从0开始
+3.5.1数据获取
+import sys 
+sys.path.append('..')
+import utils
+batch_size=256
+train_data, test_data = utils.load_data_fashion_mnist(batch_size)
+3.5.2多层感知机
+from mxnet import ndarray as nd 
+num_inputs = 28*28
+num_outputs = 10
+num_hidden = 256 
+weight_scale = 0.01
+w1 = nd.random_normal(shape=(num_inputs, num_hidden), scale = scale_weight)
+b1 = nd.zeros(num_hidden)
+w2 = nd.random_normal(shape=(num_hidden, num_outputs), scale = scale_weight)
+b2 = nd.zeros(num_outputs)
+params = [w1, b1, w2, b2]
+for param in params:
+	param.attach_grad()
+
+3.5.3激活函数
+如果用线性操作符来构造多层神经网络，那么整个模型仍然只是一个线性函数，这是因为
+yhat = X*W1*W2 = X*W3 
+为了让我们的模型可以拟合非线性函数，我们需要在层之间插入非线性的激活函数，这里使用ReLU
+def relu(X):
+	return nd.maximun(X, 0)
+
+3.5.4定义模型
+def net(X):
+	X = X.shape((-1,num_inputs))
+	h1 = relu(nd.dot(X,W1) + b1)
+	output = nd.dot(h1, w2) + b2 
+	return output
+
+3.5.5softmax和交叉熵损失函数
+from mxnet import gluon 
+softmax_cross_entropy = gluon.loss.SoftmaxCrossEntropyLoss()
+3.5.6训练
+from mxnet import autograd as ag 
+learning_rate = 0.5
+for epoch in range(5):
+	train_loss = 0.
+	train_acc = 0. 
+	for data, label in train_data:
+		with ag.record():
+			output = net(data)
+			loss = softmax_cross_entropy(output, label)
+		loss.backward()
+		utils.SGD(params, learning_rate/batch_size)
+
+		train_loss += nd.mean(loss).asscalar()
+		train_acc += utils.accuracy(output, label) 
+	test_acc = utlis.evaluate_accuracy(test_data, net) 
+	print('Epoch %d. Loss: %f, Train acc %f, Test acc %f' %(epoch, train_loss/len(train_data), train_acc/len(train_data), test_acc))
+
+3.5.7总结
+3.5.8练习
+
+
+3.6 多层感知机-使用gluon
+3.6.1定义模型
+from mxnet import gluon 
+net = gluon.nn.Sequential()
+with net.name_scope():
+	net.add(gluon.nn.Flatten())
+	net.add(gluon.nn.Dense(256, activation='relu'))
+	net.add(gluon.nn.Dense(10))
+net.initialize()
+3.6.2读取数据并训练
+import sys
+sys.path.append('..')
+from mxnet import autograd
+from mxnet import ndarray as nd 
+import utlis
+batch_size = 256 
+train_data, test_data = utlis.load_data_fashion_mnist(batch_size)
+softmax_cross_entropy = gluon.loss.SoftmaxCrossEntropyLoss()
+#优化？？？
+trainer = gluon.Trainer(net.collect_params(), 'sgd', {'learning_rate':0.5})
+for epoch in range(5):
+	train_loss=0.
+	train_acc=0.
+	for data, label in train_data:
+		with autograd.record():
+			output = net(data)
+			loss = softmax_cross_entropy(output, label)
+		loss.backward()
+		trainer.step(batch_size)
+
+		trian_loss += nd.mean(loss).asscalar 
+		train_ac += utils.accuracy(output, label)
+
+	test_acc = utils.evaluate_accuracy(test_data, net)
+	print('Epoch %d. Loss: %f, Train acc %f, Test acc %f' %(epoch, train_loss/len(train_data), train_acc/len(train_data), test_acc))
+
+3.6.3结论
+3.6.4练习
+
+3.7欠拟合和过拟合
+机器学习模型也可能由于自身不同的训练量和不同的学习能力而产生不同的测试效果
+3.7.1训练误差和泛化误差
+3.7.2欠拟合和过拟合
+3.7.3多项式拟合
+from mxnet import ndarray as nd 
+from mxnet import autograd 
+from mxnet import gluon 
+num_train = 100
+num_test = 100 
+true_w = [1.2, -3.4, 5.6]
+true_b = 5.0 
+x = nd.random.normal(shape=(num_train + num_test,1))
+X = nd.concat(x, nd.power(x,2),nd.power(x,3)) #并列相连接
+y = true_w[0]*X[:,0] +true_w[1] * X[:,1]+true_w[2]*X[:,2]+true_b 
+y += 0.1*nd.random.normal(shape=y.shape)
+#X构造了，x+x^2+x^3
+%matplotlib inline
+import matplotlib as mpl 
+mpl.rcParams['figure.dpi'] = 120 
+import matplotlib.pyplot as plt 
+def train(X_train, X_test, y_train, y_test):
+	#线性回归模型
+	net = gluon.nn.Sequential()
+	with net.name_scope():
+		net.add(gluon.nn.Dense(1))
+	net.initialize() #参数初始化
+	#设置一些默认参数
+	learning_rate=0.01 
+	epochs=100
+	batch_size = min(10, y_train.shape[0])
+	dataset_train = gluon.data.ArrayDataset(X_trian, y_train)
+	data_iter_train = gluon.data.DataLoader(dataset_train, batch_size, shuffle=true)
+	#默认SGD和均方误差 
+	trainer = gluon.Trainer(net.collect_params(), 'sgd', {'learning_rate': learning_rate})
+	square_loss = gluon.loss.L2loss() 
+	#保存训练和测试损失
+	train_loss = []
+	test_loss = []
+	for e in range(epochs):
+		for data, label in data_iter_train:
+			with autograd.record():
+				output = net(data)
+				loss = square_loss(output, label)
+			loss.backward()
+			trainer.step(batch_size)
+		train_loss.append(square_loss(net(X_train), y_train).mean().asscalar())
+		test_loss.append(square_loss(net(X_test),y_test).mean().asscalar())
+	plt.plot(train_loss)
+	plt.plot(test_loss)
+	plt.legend(['train', 'test'])
+	plt.show() 
+	return ('learned weight', net[0].weight.data(),
+			'learned bias', net[0].bias.data())
+
+
+train(X[:num_train,:],X[num_train:,:],y[:num_train,:],y[num_train:,:])
+#欠拟合
+train(x[:num_train,:],x[num_train:,:],y[:num_train,:],y[num_train:,:])
+#将训练样本设置为2，这时，样本数量过低，甚至少于模型参数的数量，
+#这使得模型显得过于复杂，以至于容易被训练数据中的噪音影响，这就是典型的过拟合现象
+train(x[:2,:],x[num_train:,:],y[:2,:],y[num_train:,:])
+
+			
+3.8 正则化从0开始
+3.8.1高位线性回归
+from mxnet import autograd 
+from mxnet import ndarray as nd 
+from mxnet import gluon 
+num_train = 20
+num_test = 100 
+num_inputs = 200
+3.8.2生成数据集
+true_w  = nd.ones((num_inputs, 1))*0.01
+true_b = 0.05
+X = nd.random.normal(shape=(num_train + num_test, num_inputs))
+y = nd.dot(X, true_w) 
+y += 0.01*nd.random.normal(shape=y.shape)
+X_train, X_test = X[:num_train, :], X[num_train:,:]
+y_train, y_test = y[:num_train], y[num_train:]
+import random 
+batch_size=1
+def data_iter(num_examples):
+	idx = list(range(num_examples))
+	random.shuffle(idx)
+	for i in range(0,num_examples,batch_size):
+		j = nd.array(idx[i:min(i+batch_size,num_examples)])
+		yield X.take(j), y.take(j)
+
+3.8.3初始化模型参数
+def get_params():
+	w = nd.random.normal(shape = (num_inputs, 1))*0.1 
+	b = nd.zeros((1,))
+	for param in (w,b):
+		param.attach_grad()
+	return (w,b)
+3.8.4 L2范数正则化
+目标函数变成 loss+lambda*||p||_2 
+def L2_penalty(w,b):
+	return (w**2).sum()+b**2
+
+>>>>> 格外关注
+3.8.5定义训练和测试
+%matplotlib inline
+import matplotlib as mpl
+mpl.rcParams['figure.dpi']= 120
+import matplotlib.pyplot as plt
+def net(X, lambd, w, b):
+	return nd.dot(X, w) + b
+def square_loss(yhat, y):
+	return (yhat - y.reshape(yhat.shape))**2
+def SGD(params, lr):
+	for param in params:
+		param[:] = param - lr*param.grad
+def test(params, X, y):
+	return square_loss(net(X, 0, *params), y).mean().asscalar() 
+def train(lambd):
+	epchs = 10
+	learning_rate = 0.002 
+	params = get_params()
+	train_loss = []
+	test_loss = []
+	for e in range(epochs):
+		for data, label in data_iter(num_train):
+			with autograd.record():
+				output = net(data, lambd, *params)
+				loss = square_loss(output, label) + lambd*L2_penalty(*params) 
+			loss.backward() 
+			SGD(params, learning_rate)
+		train_loss.append(test(params, X_train， y_train))
+		test_loss.append(test(params, X_test, y_test))
+	plt.plot(train_loss)
+	plt.plot(test_loss)
+	plt.legend(['train', 'test'])
+	plt.show()
+
+
+3.8.6观察过拟合
+train(0)
+3.8.7使用正则化
+train(2)
+3.8.8结论
+
+
+3.9正则化使用-gluon
+3.9.1高维线性回归数据集
+from mxnet import autograd 
+from mxnet import ndarray as nd 
+from mxnet import gluon 
+num_train = 20
+num_test =100 
+num_inputs = 200
+true_w = nd.one((num_inputs,1))*0.01 
+true_b = 0.05
+X = nd.random.normal(shape=(num_train+num_test, num_inputs)) #shape构造X的大小
+y = nd.dot(X,true_w)
+y +=0.01*nd.random.normal(shape=y.shape) 
+X_train, X_test = X[:num_train, :], X[num_train:, :]
+y_train, y_test  = y[:num_train], y[num_train:]
+3.9.2 定义训练和测试
+%matplotlib inline
+import matplotlib as mpl
+mpl.rcParams['figure.dpi']= 120
+import matplotlib.pyplot as plt
+batch_size=1
+dataset_train = gluon.data.ArrayDataset(X_train, y_train)
+data_iter_train = gluon.data.DataLoader(dataset_train, batch_size, shuffle=True)
+square_loss = gluon.loss.L2Loss() 
+def test(net, X, y):
+	return square_loss(net(X), y).mean().asscalar()
+
+def train(weight_decay):
+	learning_rate = 0.005 
+	epochs=10
+	net=gluon.nn.Sequential()
+	with net.name_scope():
+		net.add(gluon.nn.Dense(1))
+	net.initialize()
+	
+	trainer=gluon.Trainer(net.collect_params(), 'sgd', {'learning_rate':learning_rate, 'wd':weight_decay})
+	train_loss = []
+	test_loss = []
+	for e in range(epochs):
+		for data, label in data_iter_train:
+			with autograd.record():
+				output = net(data)
+				loss =square_loss(output, label)
+			loss.backward()
+			trainer.step(batch_size)##上面定义的trainer和下面这个trainer.step()啥意思？ 
+		train_loss.append(test(net,X_train, y_train))
+		test_loss.append(test(net, X_test, y_test))
+	plt.plot(train_loss)
+	plt.plot(test_loss)
+	plt.legend(['train', 'test'])
+	plt.show()
+	return ('learned w[:10]', net[0].weight.data()[:10], 'learned b:', net[0].bias.data())
+
+#这里的weight_decay相当于正则化中的lambda
+train(0)
+train(2)
+train(5)
+3.10 丢弃法(dropout)-从0开始
+在DL中应对过拟合问题时常用丢弃法（Dropout）
+3.10.1丢弃法的概念
+随机选择一部分该层的输出作为丢弃元素； 把丢弃元素乘以0；
+非丢弃元素拉伸
+3.10.2丢弃法的实现
+from mxnet import nd 
+def dropout(X, drop_probability): #很多细节都不太明白，还要再看，再打代码尝试
+	keep_probability = 1-drop_probability
+	assert 0 <=keep_probability<=1
+	if keep_probability ==0:
+		return X.zeros_like()
+
+	mask = nd.random.uniform(0, 1.0,X.shape,ctx=X.context)<keep_probability
+	scale= 1/keep_probability
+	return mask*X*scale 
+A = nd.arange(20).reshape((5,4))
+dropout(A, 0.0)
+dropout(A, 0.5)
+dropout(A, 1.0)
+
+3.10.3丢弃法的本质
+丢弃法在模拟集成学习； 一个使用了丢弃法的多层神经网络本质上是原始神经网络的子集（节点和边）
+与一般的集成学习不同，这里每个原神经网络子集的分类器用的是同一套参数。
+使用丢弃法的神经网络实质上是对输入层和隐含层的参数做了正则化：学到的参数使得原神经网路在不同子集在训练数据上都尽可能表现良好
+3.10.4数据获取
+import sys
+sys.path.append('..')
+import utils
+batch_size = 256
+train_data, test_data = utils.load_data_fashion_mnist(batch_size)
+
+3.10.5含两个隐藏层的多层感知机
+num_inputs = 28*28
+num_outputs = 10 
+num_hidden1 = 256
+num_hidden2 = 256 
+weight_scale = 0.01
+W1 = nd.random_normal(shape=(num_inputs, num_hidden1), scale = weight_scale)
+b1 = nd.zeros(num_hidden1)
+W2 = nd.random_normal(shape=(num_hidden1, num_hidden2), scale = weight_scale)
+b2 = nd.zeros(num_hidden2) 
+W3 = nd.random_normal(shape=(num_hidden2, num_outputs), scale = weight_scale)
+b3 = nd.zeros(num_outputs) 
+params = [W1, b1, W2, b2, W3, b3]
+for param in params:
+	param.attach_grad() 
+
+3.10.6定义包含丢弃层的模型
+我们的模型就是将层（全连接）和激活函数（ReLU）串起来，并在应用激活函数后添加丢弃层。
+每个丢弃层的元素丢弃概率可以分别设置，一般情况下，把更靠近输入层的元素丢弃概率设置更小一点。
+这里第一层设置为丢弃概率设置为0.2，第二层设置为0.5 
+drop_prob1 = 0.2
+drop_prob2 = 0.5
+def nex(X):
+	X = X.reshape((-1,num_inputs))
+	#第一层全连接
+	h1 = nd.relu(nd.dot(X,W1)+b1)
+	#第一层全连接后添加丢弃层
+	h1 = dropout(h1, drop_prob1)
+	#第二层全连接
+	h2 = nd.relu(nd.dot(h1, W2)+b2)
+	#第二层全连接后添加丢弃层
+	h2 = dropout(h2, drop_prob2)
+	return nd.dot(h2, W3) + b3 
+3.10.7训练
+from mxnet import autograd 
+from mxnet import gluon 
+softmax_cross_entropy = gluon.loss.SoftmaxCrossEntropyLoss
+learning_rate = 0.5 
+for epoch in range(5):
+	train_loss =0 
+	test_loss =0
+	for data, label in train_data:
+		with autograd.record():
+			output=net(data)
+			loss = softmax_cross_entropy
+		loss.backward()
+		utils.SGD(params, leaning_rate/batch_size)
+		train_loss +=nd.mean(loss).asscalar()
+		train_acc +=utils.accuracy(output, label)
+	test_acc = utlis.evaluate_accuracy(output, label)
+	print("Epoch %d. Loss: %f, Train acc %f, Test acc %f" % (
+epoch, train_loss/len(train_data),
+train_acc/len(train_data), test_acc))
+3.10.8总结
+使用丢弃法对神经网络正则化
+3.10.9练习
+
+3.11丢弃法-使用gluon
+3.11.1定义模型并添加丢弃层
+from mxnet.gluon imort nn 
+net = nn.Sequential()
+drop_prob1=0.2
+drop_prob2=0.5
+with net.name_scope():
+	net.add(nn.Flatten())
+	net.add(nn.Dense(256, activation='relu'))
+	net.add(nn.Dropout(drop_prob1))
+	net.add(nn.Dense(256, activation='relu'))
+	net.add(nn.Dropout(drop_prob2))
+	net.add(nn.Dense(10))
+net.initialize() 
+3.11.2 读取数据并训练
+import sys 
+import utils
+from mxnet import nd 
+from mxnet import autograd 
+from mxnet import gluon 
+batch_size = 256 
+train_data, test_data = utils.load_data_fashion_mnist(batch_size)
+softmax_cross_entropy = gluon.loss.SoftmaxCrossEntropyLoss() 
+trainer = gluon.Trainer(net.collect_params(), 'sgd', {'learning_rate':0.5})
+for epoch in range(5):
+	train_loss = 0
+	train_acc = 0
+	for data, label in train_data:
+		with autograd.record():
+			output = net(data)
+			loss = softmax_cross_entropy(output, label)
+		loss.backward()
+		trainer.step(batch_size)
+		train_loss += nd.mean(loss).asscalar()
+		train_acc += utils.accuracy(output, label)
+	test_acc = utils.evaluate_accuracy(test_data, net)
+	print("Epoch %d. Loss: %f, Train acc %f, Test acc %f" % (\
+epoch, train_loss/len(train_data),
+train_acc/len(train_data), test_acc))
+
+3.11.3结论
+通过 Gluon 我们可以更⽅便地构造多层神经⽹络并使⽤丢弃法。
+3.11.4练习
+
+3.12 实战 Kaggle ⽐赛——使⽤ Gluon 预测房价和 K 折交叉验证
+
+
+
+
+
+
+
+第四章Gluon基础
+4.1创建神经网络
+定义神经网络； 初始化参数；以及保存和读取模型
+from mxnet import gluon
+from mxnet improt nd 
+from mxnet.gluon import nn 
+net = nn.Sequential()
+with net.name_scope():
+	nn.add(nn.Dense(256), activation='relu')
+	nn.add(nn.Dense(10))
+print(net)
+
+
+
+
+
+4.1.1使用nn.block来定义
+4.1.2nn.block到底是什么东西？
+4.1.3nn.Sequential
+4.1.4nn.block和nn.Sequential的嵌套使用
+4.1.5总结
+4.1.6练习
+
+
+4.2初始化模型参数
+4.2.1
+4.2.2
+4.2.3
+4.2.4
+4.2.5
+4.2.6
+4.2.7
+4.2.8
+
+
+4.2.1
+4.2.2
+4.2.3
+4.2.4
+4.2.5
+4.2.6
+4.2.7
+4.2.8
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
