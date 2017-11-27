@@ -1,3 +1,91 @@
+def build_state
+def get_maxQ 
+def createQ
+def choose_action
+def learn
+def update
+def run
+
+
+https://github.com/vmayoral/basic_reinforcement_learning/blob/master/tutorial4/README.md
+import numpy as np
+import random
+q = np.zeros((6,6))
+q=np.matrix(q)
+r=np.array([[-1,-1,-1,-1,0,-1],[-1,-1,-1,0,-1,100],[-1,-1,-1,0,-1,-1],[-1,0,0,-1,0,-1],[0,-1,-1,0,-1,100],[-1,0,-1,-1,0,100]])
+r=np.matrix(r)
+gamma=0.8
+for i in range(10000):
+    state = random.randint(0,5)
+    while state !=5:
+        r_pos_action=[]
+        for action in range(6):
+            if r[state, action]>=0:
+                r_pos_action.append(action)
+        next_state = r_pos_action[random.randint(0, len(r_pos_action)-1)]
+        q[state, next_state] = r[state, next_state]+ gamma*q[next_state].max()
+        state=next_state
+	
+	
+	
+import random
+
+
+class QLearn:
+    def __init__(self, actions, epsilon=0.1, alpha=0.2, gamma=0.9):
+        self.q = {}
+
+        self.epsilon = epsilon  # exploration constant
+        self.alpha = alpha      # discount constant
+        self.gamma = gamma
+        self.actions = actions
+
+    def getQ(self, state, action):
+        return self.q.get((state, action), 0.0)
+        # return self.q.get((state, action), 1.0)
+
+    def learnQ(self, state, action, reward, value):
+        '''
+        Q-learning:        
+            Q(s, a) += alpha * (reward(s,a) + max(Q(s') - Q(s,a))
+        '''
+        oldv = self.q.get((state, action), None)
+        if oldv is None:
+            self.q[(state, action)] = reward
+        else:
+            self.q[(state, action)] = oldv + self.alpha * (value - oldv)
+
+    def chooseAction(self, state):
+        if random.random() < self.epsilon:
+            action = random.choice(self.actions)
+        else:
+            q = [self.getQ(state, a) for a in self.actions]
+            maxQ = max(q)
+            count = q.count(maxQ)
+            # In case there're several state-action max values 
+            # we select a random one among them
+            if count > 1:
+                best = [i for i in range(len(self.actions)) if q[i] == maxQ]
+                i = random.choice(best)
+            else:
+                i = q.index(maxQ)
+
+            action = self.actions[i]
+        return action
+
+    def learn(self, state1, action1, reward, state2):
+        maxqnew = max([self.getQ(state2, a) for a in self.actions])
+        self.learnQ(state1, action1, reward, reward + self.gamma*maxqnew)
+
+import math
+def ff(f,n):
+    fs = "{:f}".format(f)
+    if len(fs) < n:
+        return ("{:"+n+"s}").format(fs)
+    else:
+        return fs[:n]
+	
+
 1 feature rescaling
 algorithm affteced by feature rescaling:
 SVM:缩放以后，你的超平面会改变
