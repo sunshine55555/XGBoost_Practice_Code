@@ -1,3 +1,43 @@
+%run smartcab/agent.py
+Q1:
+目测没有移动，每次随机一个起始和终止位置  
+绿灯不走扣奖励，红灯不走给奖励，  
+交通灯为红，不动给奖励，为绿不动扣奖励
+
+Q2  
+2.1  
+我假设flag就是所谓的函数，不同的函数对程序不同的影响。  
+reset是在每一次trail开始的时候执行，重置route，并且在trial时降低epsilon，testing时将epsilon和alpha设置为0  
+get_maxQ:得到given state对应的所有action的最大值并返回，作为以后判断learning时的action的依据  
+choose_action:根据是否learning 以及小于epsilon的情况下，随机选择action。除此之外，选择state确定下，Q最大的action  
+2.2  create_agent函数被调用，来创建一个实体agent，包含它的位置方向等信息  
+2.3 render_text:输出agent的状态，以及有无violation下的行动以及带来的对应奖励，并且将所有信息输出到屏幕上; render:根据agent的具体状态，使得在屏幕上的投影发生变化  
+2.4 会先考虑东西方向，因为函数里面实现判断dx的位置，然后再判断dy的位置，判断dx时，有return直接就结束了，就不会在判断dy了。  
+
+Q3
+- 从第一个图看major accident的概率在7%。  
+- 可靠率在左下角这个图看，大概在10%。  
+- 从右上角的图看， 是受到了惩罚，并且惩罚在随着trial的次数在逐渐增加。  
+- 随着实验次数的增加，total bad actions 并没有降低，agent没有学到东西。  
+- 不安全也不可靠，可以从左上图的violation和accident的rate来看，都是比较高的水平。并且评价为双F。 
+
+Q4
+self.evn.sense返回了inputs的值，里面包含了如上的四个变量。input的各个变量都需要考虑，因为和你交互各个变量是直接影响**安全性**。  
+对于**效率**，考虑waypoint的方向，因为waypoint是agent应该去的方向，如果和它不一样会影响效率
+
+
+Q5
+waypoint有三种情况[None, 'left', 'right']  
+light有两种 red和green  
+left有两种 forward，None  
+right有两种left&forward 及 None
+oncoming 两种 left及not left  
+一起就是48中可能  
+agent做出的反应action有四种None（不做任何行动）、'Left'（左转）、'Right'（右转）或者'Forward'（前进）  
+总共192种可能。  感觉还是比较小，可以通过充分的训练让车做出正确决策。  
+
+
+
 def build_state
 def get_maxQ 
 def createQ
